@@ -21,7 +21,7 @@ RUN mkdir -p "$LOCAL_DIR" && \
     if [ "$WEIGHT_SOURCE" = "ms" ]; then \
         modelscope download --model "$MODEL_REPO" --local_dir "$LOCAL_DIR"; \
     else \
-        huggingface-cli download "$MODEL_REPO" --local-dir "$LOCAL_DIR" --local-dir-use-symlinks False; \
+        hf download "$MODEL_REPO" --local-dir "$LOCAL_DIR"; \
     fi
 
 ###############################################################################
