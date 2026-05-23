@@ -25,7 +25,13 @@ WORKDIR /app
 COPY pyproject.toml MANIFEST.in ./
 COPY qwen_tts/ ./qwen_tts/
 
-RUN pip install --no-cache-dir -e ".[serve]"
+# NGC PyTorch images ship torch / torchaudio / torchvision built against the
+# image's CUDA toolkit. pip would otherwise upgrade torchaudio (and friends) to
+# a CUDA-13 wheel and break the runtime. Freeze the pre-installed versions into
+# a constraints file before installing our package.
+RUN pip freeze | grep -E '^(torch|torchaudio|torchvision)==' > /tmp/torch-constraints.txt \
+ && cat /tmp/torch-constraints.txt \
+ && pip install --no-cache-dir -c /tmp/torch-constraints.txt -e ".[serve]"
 
 # Bake pre-downloaded weights into the image (run ./scripts/download-weights.sh first).
 COPY models/Qwen3-TTS-12Hz-1.7B-CustomVoice/ /models/Qwen3-TTS-12Hz-1.7B-CustomVoice/
