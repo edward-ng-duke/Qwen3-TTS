@@ -36,7 +36,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --index-url https://download.pytorch.org/whl/cu124 \
         torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1
 RUN --mount=type=cache,target=/root/.cache/pip \
-    printf 'torch==2.5.1\ntorchvision==0.20.1\ntorchaudio==2.5.1\n' > /tmp/constraints.txt \
+    printf 'torch==2.5.1\ntorchvision==0.20.1\ntorchaudio==2.5.1\ngradio<6\ngradio_client<2\n' > /tmp/constraints.txt \
  && pip install -c /tmp/constraints.txt -e ".[serve]"
 
 # Bake pre-downloaded weights into the image (run ./scripts/download-weights.sh first).
