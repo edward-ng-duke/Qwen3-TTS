@@ -28,9 +28,13 @@ def ensure_preview(cache_dir: str, speaker_id: str, *, force: bool = False) -> P
     if info is None:
         raise ValueError(f"Unknown speaker: {speaker_id}")
 
+    # Pass the canonical id (lowercase, underscore-separated). The model's
+    # supported-speaker list uses those forms; passing the human display_name
+    # ("Uncle Fu") would lower-case to "uncle fu" — a space, not underscore —
+    # and miss the lookup.
     wav, sr = generate(
         text=info.default_preview_text,
-        speaker=info.display_name,
+        speaker=info.id,
         language=info.language,
         instruct=(info.default_preview_instruct or None),
     )

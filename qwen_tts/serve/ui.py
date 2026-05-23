@@ -122,9 +122,11 @@ def build_ui(cfg: ServeConfig) -> gr.Blocks:
             speaker_id = display_to_id.get(speaker_display)
             if speaker_id is None:
                 return None, "", "Please pick a voice (请选择音色)."
-            # Convert lowercase id back to whatever the model expects: use the
-            # original display name we cached (mirrors the speaker_pairs list).
-            speaker_for_model = id_to_display.get(speaker_id, speaker_display)
+            # The model's get_supported_speakers() returns the canonical
+            # lowercase ids (e.g. "uncle_fu"). Pass the id directly — the
+            # human display_name ("Uncle Fu") would lower-case to "uncle fu"
+            # (space, not underscore) and miss the lookup.
+            speaker_for_model = speaker_id
             instruct = _emotion_label_to_instruct(emotion_label, custom_instruct)
             try:
                 t0 = time.time()
