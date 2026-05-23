@@ -29,12 +29,15 @@ COPY qwen_tts/ ./qwen_tts/
 # torchaudio. The latest torchaudio on PyPI requires CUDA 13, which would
 # break the runtime ("libcudart.so.13: cannot open shared object file").
 # Install the CUDA-12 torchaudio 2.5.1 wheel explicitly with --no-deps so it
-# doesn't try to "upgrade" the NGC torch, then pin it via a constraints file
-# so `pip install -e .[serve]` does not overwrite it.
-RUN pip install --no-cache-dir --no-deps torchaudio==2.5.1 \
+# doesn't drag a non-NGC torch in, then pin it via a constraints file so
+# `pip install -e .[serve]` does not overwrite it. BuildKit cache mounts on
+# /root/.cache/pip keep iterative rebuilds fast.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-deps torchaudio==2.5.1 \
         --index-url https://download.pytorch.org/whl/cu124
-RUN echo 'torchaudio==2.5.1' > /tmp/constraints.txt \
- && pip install --no-cache-dir -c /tmp/constraints.txt -e ".[serve]"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    echo 'torchaudio==2.5.1' > /tmp/constraints.txt \
+ && pip install -c /tmp/constraints.txt -e ".[serve]"
 
 # Bake pre-downloaded weights into the image (run ./scripts/download-weights.sh first).
 COPY models/Qwen3-TTS-12Hz-1.7B-CustomVoice/ /models/Qwen3-TTS-12Hz-1.7B-CustomVoice/
