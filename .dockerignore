@@ -17,9 +17,12 @@ assets/
 *.wav
 *.mp3
 *.flac
+# Block large binaries from random places…
 *.pt
 *.bin
 *.safetensors
+# …but allow the pre-downloaded model dir to be COPYed into the image.
+!models/**
 docs/
 README.md
 LICENSE

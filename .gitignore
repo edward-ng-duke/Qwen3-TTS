@@ -22,3 +22,7 @@ wheels/
 .vscode/
 venv/
 env/
+
+# Pre-downloaded model weights (multi-GB; baked into the Docker image at build time).
+models/
+followups.md
