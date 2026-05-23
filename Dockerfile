@@ -25,18 +25,18 @@ WORKDIR /app
 COPY pyproject.toml MANIFEST.in ./
 COPY qwen_tts/ ./qwen_tts/
 
-# NGC PyTorch 24.10 ships torch 2.5.0 + CUDA 12.6 but does NOT include
-# torchaudio. The latest torchaudio on PyPI requires CUDA 13, which would
-# break the runtime ("libcudart.so.13: cannot open shared object file").
-# Install the CUDA-12 torchaudio 2.5.1 wheel explicitly with --no-deps so it
-# doesn't drag a non-NGC torch in, then pin it via a constraints file so
-# `pip install -e .[serve]` does not overwrite it. BuildKit cache mounts on
-# /root/.cache/pip keep iterative rebuilds fast.
+# NGC PyTorch 24.10 ships torch 2.5.0a0 + torchvision (matched) but NO
+# torchaudio. Installing only torchaudio from PyPI causes pip to "upgrade"
+# torch to 2.5.0 stable (its hard dep) and leave torchvision behind, broken.
+# Solution: install the matching torch / torchvision / torchaudio triple from
+# the PyTorch CUDA-12.4 index in one shot, then pin them via a constraints
+# file so `pip install -e .[serve]` does not touch them again.
+# BuildKit cache mounts on /root/.cache/pip keep iterative rebuilds fast.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-deps torchaudio==2.5.1 \
-        --index-url https://download.pytorch.org/whl/cu124
+    pip install --index-url https://download.pytorch.org/whl/cu124 \
+        torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1
 RUN --mount=type=cache,target=/root/.cache/pip \
-    echo 'torchaudio==2.5.1' > /tmp/constraints.txt \
+    printf 'torch==2.5.1\ntorchvision==0.20.1\ntorchaudio==2.5.1\n' > /tmp/constraints.txt \
  && pip install -c /tmp/constraints.txt -e ".[serve]"
 
 # Bake pre-downloaded weights into the image (run ./scripts/download-weights.sh first).
