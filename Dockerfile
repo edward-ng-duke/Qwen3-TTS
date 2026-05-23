@@ -15,7 +15,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
     MODEL_PATH=/models/Qwen3-TTS-12Hz-1.7B-CustomVoice \
     PREVIEW_CACHE_DIR=/var/qwen-tts/previews \
     HOST=0.0.0.0 \
-    PORT=8000
+    PORT=8000 \
+    # NGC PyTorch 24.10 ships flash-attn built against its torch alpha ABI.
+    # We replaced torch with stable 2.5.1 for torchaudio compatibility, which
+    # breaks the pre-built flash_attn_2_cuda.so. Fall back to native SDPA
+    # (PyTorch's scaled_dot_product_attention) — slightly slower than FA2 but
+    # works without recompiling flash-attn.
+    ATTN_IMPL=sdpa
 
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl \
  && rm -rf /var/lib/apt/lists/*
