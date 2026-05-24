@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -56,8 +58,18 @@ def test_languages(client):
     assert langs[0] == "Auto"
 
 
-def test_root_returns_gradio(client):
-    r = client.get("/")
+def test_legacy_serves_gradio(client):
+    r = client.get("/legacy")
     assert r.status_code == 200
     body = r.text.lower()
     assert "gradio" in body or "<!doctype html" in body
+
+
+def test_root_serves_react_when_dist_present(client):
+    # In CI / local dev, web/dist may not be built; React mount is conditional.
+    web_dist = Path(os.environ.get("WEB_DIST", "/app/web/dist"))
+    if not (web_dist / "index.html").exists():
+        pytest.skip("web/dist not built; React mount is conditional")
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"].lower()
