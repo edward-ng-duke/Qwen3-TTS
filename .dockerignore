@@ -1,0 +1,35 @@
+.git
+.github
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+**/__pycache__
+**/*.pyc
+*.egg-info
+.pytest_cache
+.vscode
+.idea
+tests/
+finetuning/
+examples/
+assets/
+*.wav
+*.mp3
+*.flac
+# Block large binaries from random places…
+*.pt
+*.bin
+*.safetensors
+# …but allow the pre-downloaded model dir to be COPYed into the image.
+!models/**
+docs/
+README.md
+LICENSE
+.venv
+venv
+node_modules
+followups.md
+web/node_modules
+web/dist
+web/.vite

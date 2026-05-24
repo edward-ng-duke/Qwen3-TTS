@@ -1,0 +1,91 @@
+# Qwen3-TTS deployment shortcuts.
+# Run `make help` for the list of targets.
+
+PORT       ?= 4967
+IMAGE      ?= qwen3-tts:local
+CONTAINER  ?= qwen3-tts
+WEIGHTS_DIR := models/Qwen3-TTS-12Hz-1.7B-CustomVoice
+
+.PHONY: help download build up down restart logs ps health deploy redeploy test clean nuke web-dev web-build
+
+help:
+	@echo "Qwen3-TTS — make targets:"
+	@echo "  make download   Download model weights to ./$(WEIGHTS_DIR) (HF; WEIGHT_SOURCE=ms for ModelScope)"
+	@echo "  make build      Build the docker image ($(IMAGE))"
+	@echo "  make up         Start the container in the background"
+	@echo "  make down       Stop and remove the container"
+	@echo "  make restart    down + up"
+	@echo "  make logs       Tail container logs (Ctrl-C to detach)"
+	@echo "  make ps         Show container status"
+	@echo "  make health     curl /v1/health"
+	@echo "  make deploy     download (if needed) + build + up + wait for ready"
+	@echo "  make redeploy   down + build + up + wait for ready (skips download)"
+	@echo "  make test       Run pytest"
+	@echo "  make web-dev    Run Vite dev server on :5173 (proxy /v1 → $(PORT))"
+	@echo "  make web-build  Build web/dist locally (Docker does this in its build stage)"
+	@echo "  make clean      Remove container + image (keeps weights and preview cache)"
+	@echo "  make nuke       Same as clean + deletes preview volume (keeps weights)"
+	@echo ""
+	@echo "Demo UI:  http://localhost:$(PORT)/"
+	@echo "API:      http://localhost:$(PORT)/v1/*  (Swagger at /docs)"
+
+download:
+	@if [ -f "$(WEIGHTS_DIR)/model.safetensors" ]; then \
+		echo "[make] weights already at $(WEIGHTS_DIR) — skip"; \
+	else \
+		./scripts/download-weights.sh; \
+	fi
+
+build:
+	docker compose build
+
+up:
+	docker compose up -d
+	@echo "[make] container starting; demo UI: http://localhost:$(PORT)/"
+
+down:
+	-docker compose down
+
+restart: down up
+
+logs:
+	docker compose logs -f --tail=200
+
+ps:
+	@docker ps --filter name=$(CONTAINER) --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+
+health:
+	@curl -fsS http://localhost:$(PORT)/v1/health && echo
+
+wait-ready:
+	@echo "[make] waiting for model_ready=true (up to 300s)…"
+	@for i in $$(seq 1 150); do \
+		r=$$(curl -fsS http://localhost:$(PORT)/v1/health 2>/dev/null || true); \
+		case "$$r" in *'"model_ready":true'*) echo "[make] READY ($${i}x2s): $$r"; exit 0;; esac; \
+		if ! docker ps --filter name=$(CONTAINER) --format '{{.Names}}' | grep -q $(CONTAINER); then \
+			echo "[make] container exited; logs:"; docker logs $(CONTAINER) --tail 40; exit 1; \
+		fi; \
+		sleep 2; \
+	done; \
+	echo "[make] timeout"; docker logs $(CONTAINER) --tail 40; exit 1
+
+deploy: download build up wait-ready
+	@echo "[make] deploy complete → http://localhost:$(PORT)/"
+
+redeploy: down build up wait-ready
+	@echo "[make] redeploy complete → http://localhost:$(PORT)/"
+
+test:
+	pytest -q
+
+web-dev:
+	@cd web && npm install && npm run dev
+
+web-build:
+	@cd web && npm install && npm run build
+
+clean: down
+	-docker image rm $(IMAGE)
+
+nuke: clean
+	-docker volume rm qwen3-tts_qwen-tts-previews

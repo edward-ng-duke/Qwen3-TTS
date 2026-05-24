@@ -1,0 +1,24 @@
+services:
+  qwen-tts:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        WEIGHT_SOURCE: hf  # override with: docker compose build --build-arg WEIGHT_SOURCE=ms
+    image: qwen3-tts:local
+    container_name: qwen3-tts
+    ports:
+      - "4967:4967"
+    volumes:
+      - qwen-tts-previews:/var/qwen-tts/previews
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  qwen-tts-previews:
