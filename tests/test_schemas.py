@@ -57,7 +57,7 @@ def test_voice_info_shape():
 
 
 def test_health_response():
-    h = HealthResponse(status="ok", model_ready=True, model_path="/models/x")
+    h = HealthResponse(status="ok", model_ready=True, model_path="/models/x", variant="customvoice")
     assert h.model_ready is True
 
 

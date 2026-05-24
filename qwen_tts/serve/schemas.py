@@ -61,6 +61,7 @@ class HealthResponse(BaseModel):
     status: Literal["ok", "loading", "error"]
     model_ready: bool
     model_path: str
+    variant: str
 
 
 class VoiceDesignRequest(BaseModel):
