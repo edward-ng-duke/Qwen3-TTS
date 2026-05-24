@@ -15,7 +15,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     MODEL_PATH=/models/Qwen3-TTS-12Hz-1.7B-CustomVoice \
     PREVIEW_CACHE_DIR=/var/qwen-tts/previews \
     HOST=0.0.0.0 \
-    PORT=8000 \
+    PORT=4967 \
     # NGC PyTorch 24.10 ships flash-attn built against its torch alpha ABI.
     # We replaced torch with stable 2.5.1 for torchaudio compatibility, which
     # breaks the pre-built flash_attn_2_cuda.so. Fall back to native SDPA
@@ -50,9 +50,9 @@ COPY models/Qwen3-TTS-12Hz-1.7B-CustomVoice/ /models/Qwen3-TTS-12Hz-1.7B-CustomV
 
 RUN mkdir -p "$PREVIEW_CACHE_DIR"
 
-EXPOSE 8000
+EXPOSE 4967
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
-  CMD curl -fsS http://127.0.0.1:8000/v1/health || exit 1
+  CMD curl -fsS http://127.0.0.1:4967/v1/health || exit 1
 
-CMD ["python", "-m", "qwen_tts.serve", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "qwen_tts.serve", "--host", "0.0.0.0", "--port", "4967"]
