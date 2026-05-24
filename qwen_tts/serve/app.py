@@ -7,6 +7,7 @@ from pathlib import Path
 
 import gradio as gr
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import model as model_mod
@@ -52,6 +53,14 @@ def create_app(cfg: ServeConfig, *, load_model_on_startup: bool = True) -> FastA
 
     blocks = build_ui(cfg)
     app = gr.mount_gradio_app(app, blocks, path="/legacy")
+
+    # Gradio's mount only matches /legacy/* (with trailing slash). Without
+    # an explicit redirect, /legacy would fall through to the StaticFiles /
+    # mount below and 404. Add a 307 to /legacy/.
+    @app.get("/legacy")
+    def _legacy_redirect() -> RedirectResponse:
+        return RedirectResponse(url="/legacy/", status_code=307)
+
 
     # React SPA (web/dist) takes over `/`. Mount LAST so it can serve index.html
     # via StaticFiles(html=True) without shadowing the /v1/* and /legacy routes
