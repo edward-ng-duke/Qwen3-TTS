@@ -28,6 +28,11 @@ interface Schema extends DBSchema {
 const DB_NAME = "qwen-tts"
 const DB_VERSION = 1
 const MAX_ITEMS = 100
+export const HISTORY_CHANGED_EVENT = "qwen-tts-history-changed"
+
+export function notifyHistoryChanged(): void {
+  window.dispatchEvent(new Event(HISTORY_CHANGED_EVENT))
+}
 
 let _db: Promise<IDBPDatabase<Schema>> | null = null
 function getDb() {

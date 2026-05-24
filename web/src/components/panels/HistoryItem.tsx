@@ -1,4 +1,5 @@
 import { Trash2 } from "lucide-react"
+import type { KeyboardEvent } from "react"
 import { Button } from "@/components/ui/button"
 import type { HistoryItem as TItem } from "@/lib/db"
 import { useComposerStore } from "@/stores/useComposerStore"
@@ -11,15 +12,25 @@ interface Props {
 
 export function HistoryItem({ item, onDelete }: Props) {
   const loadFromHistory = useComposerStore((s) => s.loadFromHistory)
+  const load = () =>
+    loadFromHistory({
+      text: item.text, language: item.language, speakerId: item.speakerId,
+      emotion: item.emotion, customInstruct: item.customInstruct, seed: item.seed,
+    })
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      load()
+    }
+  }
+
   return (
     <div
+      role="button"
+      tabIndex={0}
       className="rounded-card border border-border bg-surface hover:bg-surface-2 p-3 cursor-pointer group transition"
-      onClick={() =>
-        loadFromHistory({
-          text: item.text, language: item.language, speakerId: item.speakerId,
-          emotion: item.emotion, customInstruct: item.customInstruct, seed: item.seed,
-        })
-      }
+      onClick={load}
+      onKeyDown={onKeyDown}
     >
       <div className="flex items-center gap-2 text-xs text-text-muted">
         <span className="text-text font-medium">{item.speakerId}</span>
@@ -28,6 +39,7 @@ export function HistoryItem({ item, onDelete }: Props) {
         <Button
           variant="ghost" size="icon"
           className="h-6 w-6 opacity-0 group-hover:opacity-100 text-danger"
+          aria-label="删除历史记录"
           onClick={(e) => { e.stopPropagation(); onDelete() }}
         >
           <Trash2 className="size-3.5" />

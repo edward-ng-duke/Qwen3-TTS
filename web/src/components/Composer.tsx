@@ -7,10 +7,11 @@ import { useComposerStore } from "@/stores/useComposerStore"
 import { useUiStore } from "@/stores/useUiStore"
 import { useVoices, useLanguages } from "@/hooks/useVoices"
 import { useGenerate } from "@/hooks/useGenerate"
-import { EmotionPicker, emotionInstructFor } from "./EmotionPicker"
+import { EmotionPicker } from "./EmotionPicker"
 import { VoicePill } from "./VoicePill"
 import { SoundWave } from "./SoundWave"
 import { formatLanguage } from "@/lib/format"
+import { emotionInstructFor } from "@/lib/emotions"
 
 export function Composer() {
   const composer = useComposerStore()

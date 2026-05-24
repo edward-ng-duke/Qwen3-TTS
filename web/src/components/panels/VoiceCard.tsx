@@ -1,4 +1,5 @@
 import { useRef, useState } from "react"
+import type { KeyboardEvent } from "react"
 import { Play, Pause, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,19 +21,39 @@ export function VoiceCard({ voice, selected, onSelect }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [playing, setPlaying] = useState(false)
 
-  const togglePreview = (e: React.MouseEvent) => {
+  const togglePreview = async (e: React.MouseEvent) => {
     e.stopPropagation()
     const a = audioRef.current
     if (!a) return
-    if (a.paused) { a.play(); setPlaying(true) } else { a.pause(); setPlaying(false) }
+    if (a.paused) {
+      try {
+        await a.play()
+        setPlaying(true)
+      } catch {
+        setPlaying(false)
+      }
+    } else {
+      a.pause()
+      setPlaying(false)
+    }
+  }
+
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      onSelect()
+    }
   }
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={selected}
       onClick={onSelect}
+      onKeyDown={onKeyDown}
       className={cn(
-        "w-full text-left rounded-card border p-3 transition",
+        "w-full text-left rounded-card border p-3 transition outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
         selected
           ? "border-accent bg-accent/5"
           : "border-border bg-surface hover:bg-surface-2"
@@ -69,8 +90,10 @@ export function VoiceCard({ voice, selected, onSelect }: Props) {
         ref={audioRef}
         src={api.previewUrl(voice.id)}
         onEnded={() => setPlaying(false)}
+        onPause={() => setPlaying(false)}
+        preload="none"
         hidden
       />
-    </button>
+    </div>
   )
 }

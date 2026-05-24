@@ -1,6 +1,12 @@
-import { type ReactNode } from "react"
+import { type ReactNode, useEffect, useRef, useState } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { useUiStore, type PanelTab } from "@/stores/useUiStore"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
@@ -16,6 +22,23 @@ const TABS: { value: PanelTab; label: string }[] = [
   { value: "history",  label: "历史" },
   { value: "advanced", label: "高级" },
 ]
+
+function useMediaQuery(query: string) {
+  const getMatches = () => (
+    typeof window !== "undefined" ? window.matchMedia(query).matches : false
+  )
+  const [matches, setMatches] = useState(getMatches)
+
+  useEffect(() => {
+    const media = window.matchMedia(query)
+    const onChange = () => setMatches(media.matches)
+    onChange()
+    media.addEventListener("change", onChange)
+    return () => media.removeEventListener("change", onChange)
+  }, [query])
+
+  return matches
+}
 
 function PanelInner({ voices, history, advanced, tab, setTab }:
   Props & { tab: PanelTab; setTab: (t: PanelTab) => void }) {
@@ -35,6 +58,15 @@ function PanelInner({ voices, history, advanced, tab, setTab }:
 
 export function SidePanel(props: Props) {
   const { panelOpen, panelTab, setPanelTab, setPanelOpen } = useUiStore()
+  const isDesktop = useMediaQuery("(min-width: 768px)")
+  const initializedMobilePanel = useRef(false)
+
+  useEffect(() => {
+    if (!isDesktop && !initializedMobilePanel.current) {
+      initializedMobilePanel.current = true
+      setPanelOpen(false)
+    }
+  }, [isDesktop, setPanelOpen])
 
   return (
     <>
@@ -49,7 +81,7 @@ export function SidePanel(props: Props) {
       </aside>
 
       {/* mobile: bottom sheet trigger floating */}
-      <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
+      <Sheet open={!isDesktop && panelOpen} onOpenChange={setPanelOpen}>
         <SheetTrigger asChild>
           <button
             className="md:hidden fixed bottom-4 right-4 z-30 px-4 h-11 rounded-full bg-accent text-white shadow-sm"
@@ -58,7 +90,11 @@ export function SidePanel(props: Props) {
             {TABS.find((t) => t.value === panelTab)?.label}
           </button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-[85vh] p-0">
+        <SheetContent side="bottom" className="!h-[85vh] max-h-[85vh] p-0">
+          <SheetTitle className="sr-only">控制面板</SheetTitle>
+          <SheetDescription className="sr-only">
+            切换音色库、历史记录和高级参数。
+          </SheetDescription>
           <PanelInner {...props} tab={panelTab} setTab={setPanelTab} />
         </SheetContent>
       </Sheet>

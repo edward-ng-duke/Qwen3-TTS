@@ -45,7 +45,7 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(BASE + path, init)
   if (!r.ok) {
     let detail = await r.text().catch(() => "")
-    try { const j = JSON.parse(detail); detail = j.detail ?? detail } catch {}
+    try { const j = JSON.parse(detail); detail = j.detail ?? detail } catch { /* ignore non-JSON error body */ }
     throw new Error(`${r.status} ${r.statusText}${detail ? `: ${detail}` : ""}`)
   }
   return r.json() as Promise<T>
@@ -66,7 +66,7 @@ export const api = {
     })
     if (!r.ok) {
       let detail = await r.text().catch(() => "")
-      try { const j = JSON.parse(detail); detail = j.detail ?? detail } catch {}
+      try { const j = JSON.parse(detail); detail = j.detail ?? detail } catch { /* ignore non-JSON error body */ }
       throw new Error(`${r.status} ${r.statusText}${detail ? `: ${detail}` : ""}`)
     }
     const blob = await r.blob()

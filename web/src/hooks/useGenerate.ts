@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query"
 import { api, type NativeTTSRequest } from "@/lib/api"
-import { historyDb, type HistoryItem } from "@/lib/db"
+import { historyDb, notifyHistoryChanged, type HistoryItem } from "@/lib/db"
 import { getAudioDuration } from "@/lib/audio"
 import { useUiStore } from "@/stores/useUiStore"
 import { toast } from "sonner"
@@ -48,6 +48,7 @@ export function useGenerate() {
         generationMs,
       }
       const id = await historyDb.add(item)
+      notifyHistoryChanged()
       return { ...item, id }
     },
     onError: (e: Error) => toast.error(`生成失败：${e.message}`),

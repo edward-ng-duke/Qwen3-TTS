@@ -1,16 +1,8 @@
-import { useEffect } from "react"
-import { useGenerate } from "@/hooks/useGenerate"
 import { useHistory } from "@/hooks/useHistory"
 import { ResultCard } from "./ResultCard"
 
 export function ResultsStream() {
-  const gen = useGenerate()
-  const { items, refresh, remove } = useHistory()
-
-  // 每次 mutation 成功后刷新历史
-  useEffect(() => {
-    if (gen.isSuccess) refresh()
-  }, [gen.isSuccess, gen.data, refresh])
+  const { items, remove } = useHistory()
 
   if (items.length === 0) {
     return (
