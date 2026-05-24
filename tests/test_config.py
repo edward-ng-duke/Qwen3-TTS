@@ -1,15 +1,3 @@
-import sys
-import types
-
-# Block heavy transitive imports that are broken in this environment so that
-# the lightweight `qwen_tts.serve.config` module can be imported in isolation.
-for _mod in ("qwen_tts", "qwen_tts.serve"):
-    if _mod not in sys.modules:
-        _m = types.ModuleType(_mod)
-        _m.__path__ = [f"/home/edward/research/Qwen3-TTS/{_mod.replace('.', '/')}"]
-        _m.__package__ = _mod
-        sys.modules[_mod] = _m
-
 from qwen_tts.serve.config import ServeConfig, resolve_model_path, VALID_VARIANTS
 
 
