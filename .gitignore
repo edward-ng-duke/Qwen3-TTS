@@ -26,3 +26,6 @@ env/
 # Pre-downloaded model weights (multi-GB; baked into the Docker image at build time).
 models/
 followups.md
+
+# Local debug / decode artifacts (e.g. decoded_single_12hz.wav)
+*.wav
