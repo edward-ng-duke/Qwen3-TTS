@@ -1,10 +1,13 @@
 """Composes the FastAPI application: routers + Gradio mount + startup hooks."""
 
 import logging
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import gradio as gr
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from . import model as model_mod
 from .api_meta import build_router as build_meta_router
@@ -48,5 +51,21 @@ def create_app(cfg: ServeConfig, *, load_model_on_startup: bool = True) -> FastA
     app.include_router(build_native_router())
 
     blocks = build_ui(cfg)
-    app = gr.mount_gradio_app(app, blocks, path="/")
+    app = gr.mount_gradio_app(app, blocks, path="/legacy")
+
+    # React SPA (web/dist) takes over `/`. Mount LAST so it can serve index.html
+    # via StaticFiles(html=True) without shadowing the /v1/* and /legacy routes
+    # already registered above.
+    web_dist = Path(os.environ.get("WEB_DIST", "/app/web/dist"))
+    if web_dist.is_dir() and (web_dist / "index.html").exists():
+        app.mount(
+            "/",
+            StaticFiles(directory=str(web_dist), html=True),
+            name="web",
+        )
+        log.info("Mounted React web at / (dist=%s)", web_dist)
+    else:
+        log.warning(
+            "web/dist not found at %s — Gradio at /legacy is the only UI", web_dist
+        )
     return app
