@@ -61,3 +61,12 @@ class HealthResponse(BaseModel):
     status: Literal["ok", "loading", "error"]
     model_ready: bool
     model_path: str
+
+
+class VoiceDesignRequest(BaseModel):
+    text: str
+    instruct: str
+    language: Optional[str] = "Auto"
+    response_format: AudioFormat = "wav"
+    sampling: Optional[SamplingParams] = None
+    seed: Optional[int] = None

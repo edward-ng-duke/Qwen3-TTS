@@ -64,3 +64,30 @@ def test_health_response():
 def test_languages_response():
     ls = LanguagesResponse(languages=["Auto", "Chinese", "English"])
     assert "Auto" in ls.languages
+
+
+def test_voice_design_request_round_trip():
+    from qwen_tts.serve.schemas import VoiceDesignRequest
+    req = VoiceDesignRequest(
+        text="hi",
+        instruct="speak in an angry tone",
+        language="English",
+        response_format="mp3",
+        sampling={"temperature": 0.7, "top_k": 40},
+        seed=42,
+    )
+    d = req.model_dump()
+    assert d["text"] == "hi"
+    assert d["instruct"] == "speak in an angry tone"
+    assert d["response_format"] == "mp3"
+    assert d["sampling"]["temperature"] == 0.7
+    assert d["seed"] == 42
+
+
+def test_voice_design_request_defaults():
+    from qwen_tts.serve.schemas import VoiceDesignRequest
+    req = VoiceDesignRequest(text="hi", instruct="calm")
+    assert req.language == "Auto"
+    assert req.response_format == "wav"
+    assert req.sampling is None
+    assert req.seed is None
