@@ -30,3 +30,6 @@ LICENSE
 venv
 node_modules
 followups.md
+web/node_modules
+web/dist
+web/.vite

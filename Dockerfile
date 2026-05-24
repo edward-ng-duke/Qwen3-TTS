@@ -4,6 +4,22 @@
 # (run ./scripts/download-weights.sh first). The build itself is fully offline
 # for weights — only python packages are fetched.
 
+###############################################################################
+# Stage: web-build — compile the React frontend (web/dist).
+###############################################################################
+FROM node:22-alpine AS web-build
+WORKDIR /web
+
+# Use BuildKit cache mount to speed up iterative rebuilds
+COPY web/package.json web/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+COPY web/ ./
+RUN npm run build      # outputs to /web/dist
+
+###############################################################################
+# Stage: runtime
+###############################################################################
 FROM nvcr.io/nvidia/pytorch:24.10-py3 AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -47,6 +63,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Bake pre-downloaded weights into the image (run ./scripts/download-weights.sh first).
 COPY models/Qwen3-TTS-12Hz-1.7B-CustomVoice/ /models/Qwen3-TTS-12Hz-1.7B-CustomVoice/
+
+# Bundle the React UI built in the web-build stage.
+COPY --from=web-build /web/dist /app/web/dist
 
 RUN mkdir -p "$PREVIEW_CACHE_DIR"
 
