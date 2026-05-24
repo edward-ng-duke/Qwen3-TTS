@@ -6,7 +6,7 @@ IMAGE      ?= qwen3-tts:local
 CONTAINER  ?= qwen3-tts
 WEIGHTS_DIR := models/Qwen3-TTS-12Hz-1.7B-CustomVoice
 
-.PHONY: help download build up down restart logs ps health deploy redeploy test clean nuke
+.PHONY: help download build up down restart logs ps health deploy redeploy test clean nuke web-dev web-build
 
 help:
 	@echo "Qwen3-TTS — make targets:"
@@ -21,6 +21,8 @@ help:
 	@echo "  make deploy     download (if needed) + build + up + wait for ready"
 	@echo "  make redeploy   down + build + up + wait for ready (skips download)"
 	@echo "  make test       Run pytest"
+	@echo "  make web-dev    Run Vite dev server on :5173 (proxy /v1 → $(PORT))"
+	@echo "  make web-build  Build web/dist locally (Docker does this in its build stage)"
 	@echo "  make clean      Remove container + image (keeps weights and preview cache)"
 	@echo "  make nuke       Same as clean + deletes preview volume (keeps weights)"
 	@echo ""
@@ -75,6 +77,12 @@ redeploy: down build up wait-ready
 
 test:
 	pytest -q
+
+web-dev:
+	@cd web && npm install && npm run dev
+
+web-build:
+	@cd web && npm install && npm run build
 
 clean: down
 	-docker image rm $(IMAGE)
