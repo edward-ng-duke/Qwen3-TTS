@@ -28,15 +28,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1 \
-    MODEL_PATH=/models/Qwen3-TTS-12Hz-1.7B-CustomVoice \
+    MODELS_ROOT=/models \
+    MODEL_VARIANT=customvoice \
     PREVIEW_CACHE_DIR=/var/qwen-tts/previews \
     HOST=0.0.0.0 \
     PORT=4967 \
-    # NGC PyTorch 24.10 ships flash-attn built against its torch alpha ABI.
-    # We replaced torch with stable 2.5.1 for torchaudio compatibility, which
-    # breaks the pre-built flash_attn_2_cuda.so. Fall back to native SDPA
-    # (PyTorch's scaled_dot_product_attention) — slightly slower than FA2 but
-    # works without recompiling flash-attn.
     ATTN_IMPL=sdpa
 
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl \
@@ -61,8 +57,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     printf 'torch==2.5.1\ntorchvision==0.20.1\ntorchaudio==2.5.1\ngradio<6\ngradio_client<2\n' > /tmp/constraints.txt \
  && pip install -c /tmp/constraints.txt -e ".[serve]"
 
-# Bake pre-downloaded weights into the image (run ./scripts/download-weights.sh first).
+# Bake pre-downloaded weights into the image
+# (run ./scripts/download-weights.sh first; default downloads all three variants).
 COPY models/Qwen3-TTS-12Hz-1.7B-CustomVoice/ /models/Qwen3-TTS-12Hz-1.7B-CustomVoice/
+COPY models/Qwen3-TTS-12Hz-1.7B-VoiceDesign/ /models/Qwen3-TTS-12Hz-1.7B-VoiceDesign/
+COPY models/Qwen3-TTS-12Hz-1.7B-Base/        /models/Qwen3-TTS-12Hz-1.7B-Base/
 
 # Bundle the React UI built in the web-build stage.
 COPY --from=web-build /web/dist /app/web/dist

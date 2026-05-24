@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import os
 
 from .config import ServeConfig
 
@@ -28,6 +29,11 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--preview-cache-dir", default=None)
     p.add_argument("--log-level", default="info",
                    choices=["debug", "info", "warning", "error"])
+    p.add_argument("--variant", default=None,
+                   choices=["customvoice", "voicedesign", "base"],
+                   help="Model variant (overrides MODEL_VARIANT env). Default: customvoice.")
+    p.add_argument("--models-root", default=None,
+                   help="Root directory holding the three Qwen3-TTS-12Hz-1.7B-* model dirs.")
     return p
 
 
@@ -43,16 +49,21 @@ def main(argv=None) -> int:
 
     cfg = ServeConfig.from_env()
     for field in ("host", "port", "model_path", "device", "dtype",
-                  "attn_impl", "preview_cache_dir"):
-        v = getattr(args, field)
+                  "attn_impl", "preview_cache_dir", "variant", "models_root"):
+        v = getattr(args, field, None)
         if v is not None:
             setattr(cfg, field, v)
+    # If --variant was passed without an explicit --model-path, re-resolve the
+    # path so it points at the right baked model dir.
+    if args.variant is not None and not os.environ.get("MODEL_PATH") and args.model_path is None:
+        from .config import resolve_model_path
+        cfg.model_path = resolve_model_path(cfg.variant, cfg.models_root)
     if args.no_flash_attn:
         cfg.attn_impl = "sdpa"
 
     logging.getLogger(__name__).info(
-        "Starting Qwen3-TTS serve on %s:%s (model=%s, device=%s, dtype=%s, attn=%s)",
-        cfg.host, cfg.port, cfg.model_path, cfg.device, cfg.dtype, cfg.attn_impl,
+        "Starting Qwen3-TTS serve on %s:%s (variant=%s, model=%s, device=%s, dtype=%s, attn=%s)",
+        cfg.host, cfg.port, cfg.variant, cfg.model_path, cfg.device, cfg.dtype, cfg.attn_impl,
     )
 
     app = create_app(cfg)

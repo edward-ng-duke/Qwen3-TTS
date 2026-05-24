@@ -7,6 +7,12 @@ services:
         WEIGHT_SOURCE: hf  # override with: docker compose build --build-arg WEIGHT_SOURCE=ms
     image: qwen3-tts:local
     container_name: qwen3-tts
+    # Override at run-time to switch the loaded model:
+    #   MODEL_VARIANT=customvoice  → 9 preset speakers + instruct  (default)
+    #   MODEL_VARIANT=voicedesign  → text-described voice generation
+    #   MODEL_VARIANT=base         → 3-second voice cloning
+    environment:
+      MODEL_VARIANT: ${MODEL_VARIANT:-customvoice}
     ports:
       - "4967:4967"
     volumes:

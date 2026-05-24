@@ -69,37 +69,39 @@ def build_router(cfg: ServeConfig) -> APIRouter:
             status="ok" if ready else "loading",
             model_ready=ready,
             model_path=cfg.model_path,
+            variant=cfg.variant,
         )
 
-    @router.get("/voices", response_model=VoicesListResponse)
-    def list_voices() -> VoicesListResponse:
-        voices = []
-        for sid in _resolved_speaker_ids():
-            info = _info_for(sid)
-            voices.append(VoiceInfoResponse(
-                id=info.id,
-                display_name=info.display_name,
-                gender=info.gender,
-                age_group=info.age_group,
-                language=info.language,
-                accent=info.accent,
-                description=info.description,
-                preview_url=f"/v1/voices/{info.id}/preview",
-            ))
-        return VoicesListResponse(voices=voices)
+    if cfg.variant == "customvoice":
+        @router.get("/voices", response_model=VoicesListResponse)
+        def list_voices() -> VoicesListResponse:
+            voices = []
+            for sid in _resolved_speaker_ids():
+                info = _info_for(sid)
+                voices.append(VoiceInfoResponse(
+                    id=info.id,
+                    display_name=info.display_name,
+                    gender=info.gender,
+                    age_group=info.age_group,
+                    language=info.language,
+                    accent=info.accent,
+                    description=info.description,
+                    preview_url=f"/v1/voices/{info.id}/preview",
+                ))
+            return VoicesListResponse(voices=voices)
 
-    @router.get("/voices/{voice_id}/preview")
-    def get_preview(voice_id: str):
-        sid = voice_id.lower()
-        if sid not in _resolved_speaker_ids():
-            raise HTTPException(status_code=404, detail=f"Unknown voice: {voice_id}")
-        p = preview_path(cfg.preview_cache_dir, sid)
-        if not p.exists():
-            try:
-                p = ensure_preview(cfg.preview_cache_dir, sid)
-            except Exception as e:
-                raise HTTPException(status_code=503, detail=f"preview generation failed: {e}")
-        return FileResponse(str(p), media_type="audio/wav", filename=f"{sid}.wav")
+        @router.get("/voices/{voice_id}/preview")
+        def get_preview(voice_id: str):
+            sid = voice_id.lower()
+            if sid not in _resolved_speaker_ids():
+                raise HTTPException(status_code=404, detail=f"Unknown voice: {voice_id}")
+            p = preview_path(cfg.preview_cache_dir, sid)
+            if not p.exists():
+                try:
+                    p = ensure_preview(cfg.preview_cache_dir, sid)
+                except Exception as e:
+                    raise HTTPException(status_code=503, detail=f"preview generation failed: {e}")
+            return FileResponse(str(p), media_type="audio/wav", filename=f"{sid}.wav")
 
     @router.get("/languages", response_model=LanguagesResponse)
     def list_languages() -> LanguagesResponse:

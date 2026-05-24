@@ -83,3 +83,71 @@ def generate(
         )
     wav = np.asarray(wavs[0])
     return wav, int(sr)
+
+
+def generate_design(
+    *,
+    text: str,
+    instruct: str,
+    language: str = "Auto",
+    seed: Optional[int] = None,
+    **sampling,
+) -> Tuple[np.ndarray, int]:
+    """VoiceDesign: generate voice from a natural-language description."""
+    tts = get_model()
+    sampling = {k: v for k, v in sampling.items() if v is not None}
+    with _gen_lock:
+        if seed is not None:
+            torch.manual_seed(int(seed))
+        wavs, sr = tts.generate_voice_design(
+            text=text,
+            language=(language or "Auto"),
+            instruct=instruct,
+            **sampling,
+        )
+    return np.asarray(wavs[0]), int(sr)
+
+
+def generate_clone(
+    *,
+    text: str,
+    language: str = "Auto",
+    ref_audio: Optional[Tuple[np.ndarray, int]] = None,
+    ref_text: Optional[str] = None,
+    x_vector_only_mode: bool = False,
+    voice_clone_prompt: Optional[list] = None,
+    seed: Optional[int] = None,
+    **sampling,
+) -> Tuple[np.ndarray, int]:
+    """Base: voice clone. Either ref_audio (+ optionally ref_text) OR an already-built
+    voice_clone_prompt list must be provided."""
+    tts = get_model()
+    sampling = {k: v for k, v in sampling.items() if v is not None}
+    with _gen_lock:
+        if seed is not None:
+            torch.manual_seed(int(seed))
+        kwargs = dict(text=text, language=(language or "Auto"), **sampling)
+        if voice_clone_prompt is not None:
+            kwargs["voice_clone_prompt"] = voice_clone_prompt
+        else:
+            kwargs["ref_audio"] = ref_audio
+            kwargs["ref_text"] = ref_text
+            kwargs["x_vector_only_mode"] = bool(x_vector_only_mode)
+        wavs, sr = tts.generate_voice_clone(**kwargs)
+    return np.asarray(wavs[0]), int(sr)
+
+
+def create_clone_prompt(
+    *,
+    ref_audio: Tuple[np.ndarray, int],
+    ref_text: Optional[str],
+    x_vector_only_mode: bool,
+):
+    """Build a reusable voice-clone prompt (list of VoiceClonePromptItem)."""
+    tts = get_model()
+    with _gen_lock:
+        return tts.create_voice_clone_prompt(
+            ref_audio=ref_audio,
+            ref_text=ref_text,
+            x_vector_only_mode=bool(x_vector_only_mode),
+        )

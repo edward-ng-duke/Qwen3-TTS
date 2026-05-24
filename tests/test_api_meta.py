@@ -85,3 +85,28 @@ def test_get_preview_generates_and_returns_wav(client, tmp_path):
 def test_get_preview_unknown_404(client):
     r = client.get("/v1/voices/no_such_voice/preview")
     assert r.status_code == 404
+
+
+def test_voices_404_when_variant_not_customvoice(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+    from qwen_tts.serve import model as model_mod
+    from qwen_tts.serve.api_meta import build_router
+    from qwen_tts.serve.config import ServeConfig
+    from fastapi import FastAPI
+
+    class _Fake:
+        class model:
+            @staticmethod
+            def get_supported_speakers(): return []
+            @staticmethod
+            def get_supported_languages(): return []
+    monkeypatch.setattr(model_mod, "_instance", _Fake())
+    cfg = ServeConfig(variant="voicedesign", model_path="/x",
+                      preview_cache_dir=str(tmp_path))
+    app = FastAPI()
+    app.include_router(build_router(cfg))
+    c = TestClient(app)
+    assert c.get("/v1/voices").status_code == 404
+    assert c.get("/v1/voices/vivian/preview").status_code == 404
+    assert c.get("/v1/health").json()["variant"] == "voicedesign"
+    monkeypatch.setattr(model_mod, "_instance", None)

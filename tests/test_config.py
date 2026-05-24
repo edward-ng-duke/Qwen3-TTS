@@ -1,8 +1,10 @@
-from qwen_tts.serve.config import ServeConfig
+from qwen_tts.serve.config import ServeConfig, resolve_model_path, VALID_VARIANTS
 
 
 def test_defaults():
     cfg = ServeConfig()
+    assert cfg.variant == "customvoice"
+    assert cfg.models_root == "/models"
     assert cfg.model_path == "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
     assert cfg.device == "cuda:0"
     assert cfg.port == 8000
@@ -37,5 +39,52 @@ def test_from_env_overrides(monkeypatch):
 
 def test_from_env_empty_string_falls_back(monkeypatch):
     monkeypatch.setenv("MODEL_PATH", "")
+    monkeypatch.delenv("MODEL_VARIANT", raising=False)
+    monkeypatch.delenv("MODELS_ROOT", raising=False)
     cfg = ServeConfig.from_env()
-    assert cfg.model_path == "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+    assert cfg.model_path.endswith("Qwen3-TTS-12Hz-1.7B-CustomVoice")
+
+
+def test_resolve_model_path_known_variants():
+    assert resolve_model_path("customvoice", "/models").endswith("Qwen3-TTS-12Hz-1.7B-CustomVoice")
+    assert resolve_model_path("voicedesign", "/models").endswith("Qwen3-TTS-12Hz-1.7B-VoiceDesign")
+    assert resolve_model_path("base", "/models").endswith("Qwen3-TTS-12Hz-1.7B-Base")
+
+
+def test_resolve_model_path_invalid():
+    import pytest
+    with pytest.raises(ValueError):
+        resolve_model_path("bogus", "/models")
+
+
+def test_variant_default_is_customvoice(monkeypatch):
+    for k in ("MODEL_VARIANT", "MODEL_PATH"):
+        monkeypatch.delenv(k, raising=False)
+    cfg = ServeConfig.from_env()
+    assert cfg.variant == "customvoice"
+    assert cfg.model_path.endswith("Qwen3-TTS-12Hz-1.7B-CustomVoice")
+
+
+def test_variant_resolved_path_when_model_path_empty(monkeypatch):
+    monkeypatch.setenv("MODEL_VARIANT", "voicedesign")
+    monkeypatch.delenv("MODEL_PATH", raising=False)
+    monkeypatch.setenv("MODELS_ROOT", "/srv/models")
+    cfg = ServeConfig.from_env()
+    assert cfg.variant == "voicedesign"
+    assert cfg.model_path == "/srv/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+
+
+def test_explicit_model_path_overrides_variant_resolution(monkeypatch):
+    monkeypatch.setenv("MODEL_VARIANT", "base")
+    monkeypatch.setenv("MODEL_PATH", "/somewhere/else")
+    cfg = ServeConfig.from_env()
+    # variant stays as declared, path is honored
+    assert cfg.variant == "base"
+    assert cfg.model_path == "/somewhere/else"
+
+
+def test_variant_inferred_from_path_basename(monkeypatch):
+    monkeypatch.delenv("MODEL_VARIANT", raising=False)
+    monkeypatch.setenv("MODEL_PATH", "/foo/Qwen3-TTS-12Hz-1.7B-VoiceDesign")
+    cfg = ServeConfig.from_env()
+    assert cfg.variant == "voicedesign"
