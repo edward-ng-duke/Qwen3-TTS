@@ -1,6 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* TW4: tell it where to scan for utilities (replaces tailwind.config.ts content). */
+@source "../../index.html";
+@source "../**/*.{ts,tsx}";
+
+/* TW4: enable class-based dark mode (so .dark on <html> switches palette). */
+@variant dark (&:where(.dark, .dark *));
 
 @font-face {
   font-family: "Inter";
@@ -18,6 +23,8 @@
   font-style: normal;
 }
 
+/* === Brand design tokens ===
+ * Light is default; .dark class on <html> flips; prefers-color-scheme picks dark when no .light. */
 :root {
   --bg: #FAFAFA;
   --surface: #FFFFFF;
@@ -62,24 +69,90 @@
   }
 }
 
-html, body, #root {
-  height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Inter", "Noto Sans SC", system-ui, -apple-system,
-    "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
-  font-feature-settings: "tnum" 1, "cv11" 1;
-  font-size: 16px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
+/* shadcn token aliases: shadcn-generated components reference --primary/--card/etc.
+ * Map them onto our brand tokens so the UI inherits our palette automatically. */
+:root, .dark {
+  --primary: var(--accent);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --destructive: var(--danger);
+  --destructive-foreground: #FFFFFF;
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-muted);
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface);
+  --popover-foreground: var(--text);
+  --accent-foreground: #FFFFFF;
+  --ring: var(--accent);
+  --input: var(--border);
+  --radius: 0.5rem;
 }
 
-* { border-color: var(--border); }
+/* TW4 @theme: expose tokens as utility colors so e.g. `bg-surface` / `text-accent` work. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-cta: var(--cta);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-waveform: var(--waveform);
 
-button:focus-visible, input:focus-visible, textarea:focus-visible,
-[role="button"]:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+
+  --font-sans: "Inter", "Noto Sans SC", system-ui, -apple-system,
+    "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+
+  --radius-card: 12px;
+  --radius-btn: 8px;
+  --radius-input: 10px;
+
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 1, "cv11" 1;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  * { border-color: var(--border); }
+
+  button:focus-visible, input:focus-visible, textarea:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
