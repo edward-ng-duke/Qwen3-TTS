@@ -113,9 +113,7 @@ dev:
 	@if [ "$(VITE_AUTH_REQUIRED)" = "true" ]; then \
 		code=$$(curl -sS -o /dev/null -w '%{http_code}' -m 2 "http://localhost:$(PORT)/api/auth/me" 2>/dev/null || true); \
 		if [ "$$code" = "404" ]; then \
-			echo "[make] auth route missing on :$(PORT); rebuild/restart backend before using authenticated dev"; \
-			echo "[make] run: docker compose down && docker compose build && docker compose up -d"; \
-			exit 1; \
+			echo "[make] warning: auth route missing on :$(PORT); login UI will render, but password verification needs the updated backend"; \
 		fi; \
 	fi
 	@echo "[make] vite dev → http://0.0.0.0:$(WEB_PORT)  (proxies /v1 → http://localhost:$(PORT))"
