@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react"
-import { motion, AnimatePresence } from "motion/react"
+import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import {
   Sheet,
   SheetContent,
@@ -45,9 +45,10 @@ function useMediaQuery(query: string) {
 }
 
 function TabBar({ tab, setTab }: { tab: PanelTab; setTab: (t: PanelTab) => void }) {
+  const reduce = useReducedMotion()
   return (
     <div
-      className="relative grid grid-cols-3 p-1 rounded-full"
+      className="relative grid grid-cols-3 p-1.5 rounded-full"
       style={{
         background: "var(--glass-thin-bg)",
         border: "1px solid var(--glass-thin-border)",
@@ -61,22 +62,50 @@ function TabBar({ tab, setTab }: { tab: PanelTab; setTab: (t: PanelTab) => void 
             type="button"
             onClick={() => setTab(t.value)}
             className={cn(
-              "relative h-7 text-[12.5px] rounded-full transition-colors select-none",
+              "relative h-9 text-[12.5px] rounded-full select-none transition-colors",
               active
-                ? "text-white"
+                ? "text-white font-medium"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
             )}
           >
+            {!active && (
+              <motion.span
+                aria-hidden
+                className="absolute inset-0 rounded-full"
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  background: "var(--glass-thin-bg)",
+                  border: "1px solid var(--glass-thin-border)",
+                }}
+              />
+            )}
             {active && (
               <motion.span
                 layoutId="sidepanel-tab"
                 aria-hidden
                 className="absolute inset-0 rounded-full -z-0"
-                style={{
-                  background: "var(--brand-gradient)",
-                  boxShadow: "0 4px 14px var(--brand-glow)",
-                }}
-                transition={desktopSpring}
+                style={{ background: "var(--brand-gradient)" }}
+                animate={
+                  reduce
+                    ? { boxShadow: "0 4px 14px var(--brand-glow)" }
+                    : {
+                        boxShadow: [
+                          "0 4px 14px var(--brand-glow)",
+                          "0 6px 22px var(--brand-glow)",
+                          "0 4px 14px var(--brand-glow)",
+                        ],
+                      }
+                }
+                transition={
+                  reduce
+                    ? desktopSpring
+                    : {
+                        layout: desktopSpring,
+                        boxShadow: { duration: 4, repeat: Infinity, ease: "easeInOut" },
+                      }
+                }
               />
             )}
             <span className="relative z-10">{t.label}</span>
@@ -94,20 +123,33 @@ function PanelInner({
   tab,
   setTab,
 }: Props & { tab: PanelTab; setTab: (t: PanelTab) => void }) {
+  const reduce = useReducedMotion()
   const content =
     tab === "voices" ? voices : tab === "history" ? history : advanced
+  const enter = reduce
+    ? { opacity: 0 }
+    : { opacity: 0, y: 10, scale: 0.985, filter: "blur(2px)" }
+  const center = reduce
+    ? { opacity: 1 }
+    : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
+  const leave = reduce
+    ? { opacity: 0 }
+    : { opacity: 0, y: -6, scale: 0.99, filter: "blur(2px)" }
+  const trans = reduce
+    ? { duration: 0.15 }
+    : { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const }
   return (
     <div className="h-full flex flex-col gap-3 p-3">
       <TabBar tab={tab} setTab={setTab} />
-      <ScrollArea className="flex-1 -mx-1">
+      <ScrollArea className="flex-1 min-h-0 -mx-1">
         <div className="px-1 pb-2">
           <AnimatePresence mode="wait">
             <motion.div
               key={tab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+              initial={enter}
+              animate={center}
+              exit={leave}
+              transition={trans}
             >
               {content}
             </motion.div>

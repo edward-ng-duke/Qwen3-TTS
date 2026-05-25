@@ -1,26 +1,41 @@
-import { motion, type Variants } from "motion/react"
+import { motion, useReducedMotion, type Variants } from "motion/react"
 import { useVoices } from "@/hooks/useVoices"
 import { useComposerStore } from "@/stores/useComposerStore"
 import { VoiceCard } from "./VoiceCard"
 
-const container: Variants = {
+const containerCinematic: Variants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.04 } },
+  show: { transition: { staggerChildren: 0.06 } },
 }
 
-const item: Variants = {
-  hidden: { opacity: 0, y: 12 },
+const itemCinematic: Variants = {
+  hidden: { opacity: 0, y: 14, scale: 0.97, filter: "blur(4px)" },
   show: {
     opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 260, damping: 24 },
+    scale: 1,
+    filter: "blur(0px)",
+    transition: { type: "spring", stiffness: 220, damping: 26, mass: 0.9 },
   },
+}
+
+const containerMinimal: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.02 } },
+}
+
+const itemMinimal: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.18 } },
 }
 
 export function VoiceLibrary() {
   const { data: voices = [], isLoading, error } = useVoices()
   const speakerId = useComposerStore((s) => s.speakerId)
   const setSpeakerId = useComposerStore((s) => s.setSpeakerId)
+  const reduce = useReducedMotion()
+  const container = reduce ? containerMinimal : containerCinematic
+  const item = reduce ? itemMinimal : itemCinematic
 
   if (isLoading) {
     return (
