@@ -2,6 +2,7 @@ import { Mic } from "lucide-react"
 import { motion } from "motion/react"
 import type { VoiceInfo } from "@/lib/api"
 import { T } from "@/lib/i18n"
+import { formatLanguage } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 const spring = { type: "spring", stiffness: 320, damping: 24 } as const
@@ -47,7 +48,7 @@ export function VoicePill({ voice, onClick, className }: Props) {
       </span>
       {voice && (
         <span className="text-[12px] text-[var(--text-tertiary)]">
-          · {voice.language}
+          · {formatLanguage(voice.language)}
         </span>
       )}
     </motion.button>
