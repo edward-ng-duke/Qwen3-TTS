@@ -85,7 +85,7 @@ def create_app(cfg: ServeConfig, *, load_model_on_startup: bool = True) -> FastA
                 log.warning("Preview generation failed: %s", e)
         yield
 
-    app = FastAPI(title=f"Qwen3-TTS Serve ({cfg.variant})", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title=f"微趣 · 接口文档 ({cfg.variant})", version="0.1.0", lifespan=lifespan)
     app.include_router(build_meta_router(cfg))
     for r in _build_variant_router(cfg.variant):
         app.include_router(r)

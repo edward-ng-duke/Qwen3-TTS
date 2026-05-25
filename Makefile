@@ -2,11 +2,12 @@
 # Run `make help` for the list of targets.
 
 PORT       ?= 4967
+WEB_PORT   ?= 4968
 IMAGE      ?= qwen3-tts:local
 CONTAINER  ?= qwen3-tts
 WEIGHTS_DIR := models/Qwen3-TTS-12Hz-1.7B-CustomVoice
 
-.PHONY: help download build up down restart logs ps health deploy redeploy test clean nuke web-dev web-build
+.PHONY: help download build up down restart logs ps health deploy redeploy test clean nuke web-dev web-build dev
 
 help:
 	@echo "Qwen3-TTS — make targets:"
@@ -21,7 +22,8 @@ help:
 	@echo "  make deploy     download (if needed) + build + up + wait for ready"
 	@echo "  make redeploy   down + build + up + wait for ready (skips download)"
 	@echo "  make test       Run pytest"
-	@echo "  make web-dev    Run Vite dev server on :5173 (proxy /v1 → $(PORT))"
+	@echo "  make dev        Run Vite dev server on 0.0.0.0:$(WEB_PORT), reuse running API at :$(PORT)"
+	@echo "  make web-dev    Alias of 'make dev' (always runs npm install first)"
 	@echo "  make web-build  Build web/dist locally (Docker does this in its build stage)"
 	@echo "  make clean      Remove container + image (keeps weights and preview cache)"
 	@echo "  make nuke       Same as clean + deletes preview volume (keeps weights)"
@@ -78,8 +80,25 @@ redeploy: down build up wait-ready
 test:
 	pytest -q
 
+dev:
+	@command -v npm >/dev/null 2>&1 || { echo "[make] npm not found — install Node.js first"; exit 1; }
+	@if [ ! -d web/node_modules ]; then \
+		echo "[make] web/node_modules missing → npm install"; \
+		cd web && npm install; \
+	fi
+	@printf "[make] checking API at http://localhost:%s/v1/health … " $(PORT); \
+	if curl -fsS -m 2 "http://localhost:$(PORT)/v1/health" >/dev/null 2>&1; then \
+		echo "OK"; \
+	else \
+		echo "MISSING"; \
+		echo "[make] tip: in another shell run 'make up' (or 'make deploy') to start the API"; \
+		echo "[make] starting Vite anyway — front-end will work, API calls will 502 until backend is up"; \
+	fi
+	@echo "[make] vite dev → http://0.0.0.0:$(WEB_PORT)  (proxies /v1 → http://localhost:$(PORT))"
+	@cd web && npm run dev -- --host 0.0.0.0 --port $(WEB_PORT) --strictPort
+
 web-dev:
-	@cd web && npm install && npm run dev
+	@cd web && npm install && npm run dev -- --host 0.0.0.0 --port $(WEB_PORT) --strictPort
 
 web-build:
 	@cd web && npm install && npm run build

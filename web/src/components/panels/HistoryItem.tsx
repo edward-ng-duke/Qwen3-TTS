@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import type { HistoryItem as TItem } from "@/lib/db"
 import { useComposerStore } from "@/stores/useComposerStore"
 import { formatRelativeTime, truncate } from "@/lib/format"
+import { voiceNameById } from "@/lib/voiceMeta"
+import { EMOTION_ZH } from "@/lib/emotions"
 
 interface Props {
   item: TItem
@@ -33,9 +35,18 @@ export function HistoryItem({ item, onDelete }: Props) {
       onKeyDown={onKeyDown}
     >
       <div className="flex items-center gap-2 text-xs text-text-muted">
-        <span className="text-text font-medium">{item.speakerId}</span>
-        <span>· {item.emotion}</span>
-        <span className="ml-auto">{formatRelativeTime(item.createdAt)}</span>
+        <span className="text-text font-medium shrink-0">{voiceNameById(item.speakerId)}</span>
+        {item.emotion === "Custom" && item.customInstruct?.trim() ? (
+          <span
+            className="min-w-0 truncate"
+            title={item.customInstruct.trim()}
+          >
+            · ✨ {item.customInstruct.trim()}
+          </span>
+        ) : (
+          <span className="shrink-0">· {EMOTION_ZH[item.emotion] ?? item.emotion}</span>
+        )}
+        <span className="ml-auto shrink-0">{formatRelativeTime(item.createdAt)}</span>
         <Button
           variant="ghost" size="icon"
           className="h-6 w-6 opacity-0 group-hover:opacity-100 text-danger"

@@ -1,8 +1,12 @@
 import { useMemo } from "react"
+import { AnimatePresence, motion } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { useHistory } from "@/hooks/useHistory"
 import { HistoryItem } from "./HistoryItem"
 import { formatGroupLabel } from "@/lib/format"
+import { T } from "@/lib/i18n"
+
+const itemSpring = { type: "spring", stiffness: 280, damping: 26 } as const
 
 export function History() {
   const { items, clear, remove } = useHistory()
@@ -18,27 +22,51 @@ export function History() {
   }, [items])
 
   if (items.length === 0) {
-    return <p className="text-sm text-text-muted">还没有历史记录。</p>
+    return (
+      <p className="text-[13px] text-[var(--text-secondary)]">
+        {T.sidePanel.history.empty}
+      </p>
+    )
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-text-muted">{items.length} 条</span>
-        <Button variant="ghost" size="sm" onClick={() => {
-          if (confirm("清空所有历史？")) clear()
-        }}>清空</Button>
+        <span className="text-[12px] text-[var(--text-tertiary)] tabular-nums">
+          {items.length} 条
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            if (confirm("清空所有历史？")) clear()
+          }}
+        >
+          {T.sidePanel.history.clearAll}
+        </Button>
       </div>
       {groups.map(([label, rows]) => (
         <div key={label} className="space-y-2">
-          <h3 className="text-xs text-text-muted font-medium">{label}</h3>
-          {rows.map((it) => (
-            <HistoryItem
-              key={it.id}
-              item={it}
-              onDelete={() => it.id != null && remove(it.id)}
-            />
-          ))}
+          <h3 className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-medium">
+            {label}
+          </h3>
+          <AnimatePresence mode="popLayout" initial={false}>
+            {rows.map((it) => (
+              <motion.div
+                key={it.id}
+                layout
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 16, scale: 0.96 }}
+                transition={itemSpring}
+              >
+                <HistoryItem
+                  item={it}
+                  onDelete={() => it.id != null && remove(it.id)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       ))}
     </div>

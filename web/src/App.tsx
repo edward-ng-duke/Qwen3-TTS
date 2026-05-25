@@ -2,6 +2,7 @@ import { Topbar } from "@/components/Topbar"
 import { Composer } from "@/components/Composer"
 import { ResultsStream } from "@/components/ResultsStream"
 import { SidePanel } from "@/components/SidePanel"
+import { AuroraBackground } from "@/components/AuroraBackground"
 import { VoiceLibrary } from "@/components/panels/VoiceLibrary"
 import { History } from "@/components/panels/History"
 import { Advanced } from "@/components/panels/Advanced"
@@ -34,11 +35,13 @@ export default function App() {
   })
 
   return (
-    <div className="h-screen flex flex-col bg-bg text-text">
-      <Topbar />
+    <>
+      <AuroraBackground />
+      <div className="h-screen flex flex-col text-[var(--text-primary)]">
+        <Topbar />
       <div className="flex-1 flex min-h-0">
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
+          <div className="max-w-3xl mx-auto px-4 md:px-6 pt-24 pb-10 space-y-6">
             <Composer />
             <div>
               <h2 className="text-sm font-medium text-text-muted mb-3">最近生成</h2>
@@ -51,7 +54,8 @@ export default function App() {
           history={<History />}
           advanced={<Advanced />}
         />
+        </div>
       </div>
-    </div>
+    </>
   )
 }
