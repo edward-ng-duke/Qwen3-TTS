@@ -9,6 +9,7 @@ import { Advanced } from "@/components/panels/Advanced"
 import { useUiStore } from "@/stores/useUiStore"
 import { useShortcuts } from "@/hooks/useShortcuts"
 import { useEffect } from "react"
+import { AuthGate } from "@/components/AuthGate"
 
 const TAB_CYCLE = ["voices", "history", "advanced"] as const
 
@@ -35,7 +36,7 @@ export default function App() {
   })
 
   return (
-    <>
+    <AuthGate>
       <AuroraBackground />
       <div className="h-screen flex flex-col text-[var(--text-primary)]">
         <Topbar />
@@ -56,6 +57,6 @@ export default function App() {
         />
         </div>
       </div>
-    </>
+    </AuthGate>
   )
 }

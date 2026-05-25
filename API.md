@@ -5,6 +5,8 @@ Base URL: `http://localhost:4967`（默认；通过 `PORT` 环境变量改）
 所有接口都是**无状态**的：每次请求自包含全部参数，不依赖 cookie / session。
 交互式 Swagger 文档：`http://localhost:4967/docs`
 
+> 用户系统开启后，`/docs`、`/openapi.json`、React UI 和 `/legacy/` 需要登录；`/v1/*` 模型 API 保持公开兼容，不要求用户 token。
+
 ---
 
 ## 快速开始
@@ -42,6 +44,19 @@ curl -X POST http://localhost:4967/v1/audio/speech \
 | POST | `/v1/tts` | **原生端点**：完整参数（instruct、sampling、seed） |
 | POST | `/v1/tts/stream` | 流式 PCM（chunked transfer） |
 | POST | `/v1/audio/speech` | **OpenAI 兼容**端点 |
+
+## 用户系统认证（可选）
+
+当 `AUTH_ENABLED=auto` 且检测到共享 Mongo/JWT 配置，或显式设置 `AUTH_ENABLED=true` 时，浏览器 UI 和文档入口会启用登录保护。认证复用同一个 MongoDB `conference_ws.users` 集合和同一个 `JWT_SECRET_KEY`。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| `GET` | `/api/auth/me` | 使用 `access_token` cookie 或 Bearer token 获取当前用户 |
+| `POST` | `/api/auth/login` | 用 Mongo 中已有用户登录，不创建用户 |
+| `POST` | `/api/auth/logout` | 清理本系统 `access_token` cookie |
+| `POST` | `/api/auth/verify-es-token` | 用 `token2` cookie 或 `X-token-2` 换取本系统 JWT |
+
+登录成功会设置 HttpOnly `access_token` cookie。禁用或删除用户后，旧 JWT 会因为 Mongo 回查失败而失效。
 
 ---
 

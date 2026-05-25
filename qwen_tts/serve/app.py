@@ -8,14 +8,18 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Optional
 
 import gradio as gr
 from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import model as model_mod
 from .api_meta import build_router as build_meta_router
+from .auth.middleware import AuthMiddleware
+from .auth.routes import build_router as build_auth_router
+from .auth.state import AuthState
 from .config import ServeConfig
 from .previews import ensure_all_previews
 from .voices import SPEAKER_METADATA
@@ -46,7 +50,12 @@ def _build_legacy_blocks(cfg: ServeConfig) -> gr.Blocks:
     return build_demo(model_mod.get_model(), cfg.model_path, {})
 
 
-def create_app(cfg: ServeConfig, *, load_model_on_startup: bool = True) -> FastAPI:
+def create_app(
+    cfg: ServeConfig,
+    *,
+    load_model_on_startup: bool = True,
+    auth_state: Optional[AuthState] = None,
+) -> FastAPI:
     # Non-customvoice variants mount the official Qwen Gradio at /legacy, and
     # build_demo() needs a *loaded* Qwen3TTSModel to introspect supported
     # speakers/languages. FastAPI's lifespan fires AFTER route mounts, so we
@@ -64,8 +73,11 @@ def create_app(cfg: ServeConfig, *, load_model_on_startup: bool = True) -> FastA
         except Exception as e:
             log.exception("Eager model load failed: %s", e)
 
+    auth_state = auth_state or AuthState.from_env()
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        await auth_state.startup()
         if load_model_on_startup and not model_mod.is_ready():
             log.info("Loading model (variant=%s) from %s ...", cfg.variant, cfg.model_path)
             try:
@@ -83,9 +95,16 @@ def create_app(cfg: ServeConfig, *, load_model_on_startup: bool = True) -> FastA
                 ensure_all_previews(cfg.preview_cache_dir, spks)
             except Exception as e:
                 log.warning("Preview generation failed: %s", e)
-        yield
+        try:
+            yield
+        finally:
+            await auth_state.shutdown()
 
     app = FastAPI(title=f"微趣 · 接口文档 ({cfg.variant})", version="0.1.0", lifespan=lifespan)
+    app.state.auth_state = auth_state
+    if auth_state.enabled:
+        app.add_middleware(AuthMiddleware)
+        app.include_router(build_auth_router())
     app.include_router(build_meta_router(cfg))
     for r in _build_variant_router(cfg.variant):
         app.include_router(r)
@@ -97,8 +116,17 @@ def create_app(cfg: ServeConfig, *, load_model_on_startup: bool = True) -> FastA
     def _legacy_redirect() -> RedirectResponse:
         return RedirectResponse(url="/legacy/", status_code=307)
 
+    web_dist = Path(os.environ.get("WEB_DIST", "/app/web/dist"))
+    if auth_state.enabled and web_dist.is_dir() and (web_dist / "index.html").exists():
+        @app.get("/login")
+        def _login_shell() -> FileResponse:
+            return FileResponse(str(web_dist / "index.html"), media_type="text/html")
+
+        assets_dir = web_dist / "assets"
+        if assets_dir.is_dir():
+            app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="web-assets")
+
     if cfg.variant == "customvoice":
-        web_dist = Path(os.environ.get("WEB_DIST", "/app/web/dist"))
         if web_dist.is_dir() and (web_dist / "index.html").exists():
             app.mount(
                 "/",

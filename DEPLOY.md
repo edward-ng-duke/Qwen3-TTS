@@ -12,6 +12,8 @@
 
 完整 API 参考见 [API.md](./API.md)。
 
+可选用户系统：设置共享 Mongo/JWT 配置后，React UI、`/legacy/`、`/docs`、`/openapi.json` 需要登录；`/v1/*` 模型 API 保持公开，方便现有调用脚本和 OpenAI 兼容客户端继续使用。
+
 ---
 
 ## 0. 前置条件
@@ -108,6 +110,36 @@ docker compose build
 ## 3. 启动 —— 选一个变体
 
 `docker compose up -d` 默认起 customvoice。要切到另外两个，用环境变量。
+
+### 3.0 用户系统认证（可选）
+
+默认 `AUTH_ENABLED=auto`。只要检测到共享 Mongo/JWT 配置，或显式 `AUTH_ENABLED=true`，服务会启用用户系统：
+
+```bash
+cp .env.example .env
+
+# 编辑 .env，至少确认这些值：
+AUTH_ENABLED=auto
+MONGO_ENABLED=true
+MONGO_URL=mongodb://10.0.0.93:27017
+DB_NAME=conference_ws
+JWT_SECRET_KEY=与现有用户系统完全一致的密钥
+
+# 可选：允许 token2 cookie / X-token-2 自动换本系统 JWT
+ES_AUTH_ENABLED=true
+ES_AUTH_URL=http://10.0.0.33:9201
+ES_USER_INDEX=mygpt_user
+
+docker compose up -d
+```
+
+`make` 目标会自动加载项目根目录的 `.env`。因此 `make up`、`make deploy`、`make dev` 会使用同一套端口和认证配置；真实 `.env` 已被 `.gitignore` 忽略。
+
+行为边界：
+- 保护：`/`、`/legacy/*`、`/docs`、`/redoc`、`/openapi.json`。
+- 公开：`/v1/*` 模型 API、`/api/auth/*`、`/login`、前端静态资源。
+- 不提供注册、用户管理后台、使用审计或云端历史。
+- 未配置 `JWT_SECRET_KEY` 但认证被启用时，认证接口 fail closed，并在日志中提示缺少密钥。
 
 ### 3.1 CustomVoice（默认）—— 9 个预置音色
 
