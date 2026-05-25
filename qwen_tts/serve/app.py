@@ -47,27 +47,42 @@ def _build_legacy_blocks(cfg: ServeConfig) -> gr.Blocks:
 
 
 def create_app(cfg: ServeConfig, *, load_model_on_startup: bool = True) -> FastAPI:
+    # Non-customvoice variants mount the official Qwen Gradio at /legacy, and
+    # build_demo() needs a *loaded* Qwen3TTSModel to introspect supported
+    # speakers/languages. FastAPI's lifespan fires AFTER route mounts, so we
+    # eager-load the model here when needed. load_model is idempotent.
+    if (
+        load_model_on_startup
+        and cfg.variant != "customvoice"
+        and not model_mod.is_ready()
+    ):
+        log.info("Eager-loading model (variant=%s) from %s for Gradio mount ...",
+                 cfg.variant, cfg.model_path)
+        try:
+            model_mod.load_model(cfg)
+            log.info("Model loaded.")
+        except Exception as e:
+            log.exception("Eager model load failed: %s", e)
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        if load_model_on_startup:
+        if load_model_on_startup and not model_mod.is_ready():
             log.info("Loading model (variant=%s) from %s ...", cfg.variant, cfg.model_path)
             try:
                 model_mod.load_model(cfg)
                 log.info("Model loaded.")
             except Exception as e:
                 log.exception("Model load failed: %s", e)
-            else:
-                if cfg.variant == "customvoice":
-                    try:
-                        spks = []
-                        if model_mod.is_ready():
-                            names = model_mod.get_model().model.get_supported_speakers() or []
-                            spks = [str(n).lower() for n in names]
-                        if not spks:
-                            spks = list(SPEAKER_METADATA.keys())
-                        ensure_all_previews(cfg.preview_cache_dir, spks)
-                    except Exception as e:
-                        log.warning("Preview generation failed: %s", e)
+        if model_mod.is_ready() and cfg.variant == "customvoice":
+            try:
+                spks = []
+                names = model_mod.get_model().model.get_supported_speakers() or []
+                spks = [str(n).lower() for n in names]
+                if not spks:
+                    spks = list(SPEAKER_METADATA.keys())
+                ensure_all_previews(cfg.preview_cache_dir, spks)
+            except Exception as e:
+                log.warning("Preview generation failed: %s", e)
         yield
 
     app = FastAPI(title=f"Qwen3-TTS Serve ({cfg.variant})", version="0.1.0", lifespan=lifespan)
