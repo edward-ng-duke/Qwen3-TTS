@@ -52,7 +52,7 @@ export function ResultCard({ item, onDelete }: Props) {
   }
 
   const onDownload = () =>
-    downloadBlob(item.audioBlob, `qwen3-tts-${item.id ?? Date.now()}.${ext}`)
+    downloadBlob(item.audioBlob, `weiqu-${item.id ?? Date.now()}.${ext}`)
 
   const onReuse = () => {
     loadFromHistory({

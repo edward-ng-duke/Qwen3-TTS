@@ -14,8 +14,8 @@ export function Topbar() {
   return (
     <header className="h-14 border-b border-border bg-surface flex items-center px-4 gap-3 sticky top-0 z-30">
       <div className="flex items-center gap-2">
-        <span className="inline-block w-7 h-7 rounded-card bg-accent text-white font-bold leading-7 text-center">Q</span>
-        <span className="font-semibold tracking-tight">Qwen3-TTS Studio</span>
+        <span className="inline-block w-7 h-7 rounded-card bg-accent text-white font-bold leading-7 text-center">微</span>
+        <span className="font-semibold tracking-tight">微趣 TTS Studio</span>
         <span className={cn(
           "ml-2 text-xs px-2 py-0.5 rounded-full",
           health?.model_ready ? "bg-success/20 text-success" : "bg-text-muted/20 text-text-muted"
