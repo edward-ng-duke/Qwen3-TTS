@@ -99,7 +99,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     --bg-base: oklch(0.18 0.02 280);
     --bg-aurora-a: oklch(0.5 0.25 280);
     --bg-aurora-b: oklch(0.45 0.22 240);
