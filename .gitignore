@@ -29,3 +29,11 @@ followups.md
 
 # Local debug / decode artifacts (e.g. decoded_single_12hz.wav)
 *.wav
+
+# Local tooling / agent state (not project source).
+.claude/
+.playwright-mcp/
+
+# Ad-hoc UI iteration screenshots at repo root.
+/empty.png
+/player-after*.png
