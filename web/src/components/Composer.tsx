@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Wand2 } from "lucide-react"
 import { motion } from "motion/react"
 import { Textarea } from "@/components/ui/textarea"
@@ -12,7 +12,7 @@ import { useGenerate } from "@/hooks/useGenerate"
 import { EmotionPicker } from "./EmotionPicker"
 import { VoicePill } from "./VoicePill"
 import { SoundWave } from "./SoundWave"
-import { formatLanguage } from "@/lib/format"
+import { estimateGenerationMs, formatEtaSec, formatLanguage } from "@/lib/format"
 import { emotionInstructFor } from "@/lib/emotions"
 import { T } from "@/lib/i18n"
 
@@ -39,6 +39,34 @@ export function Composer() {
       seen.add(k); return true
     })
   }, [languages])
+
+  const trimmedLen = composer.text.trim().length
+  const estimatedMs = useMemo(
+    () => estimateGenerationMs(composer.text.trim()),
+    [composer.text],
+  )
+
+  const [elapsedMs, setElapsedMs] = useState(0)
+  useEffect(() => {
+    if (!gen.isPending) {
+      setElapsedMs(0)
+      return
+    }
+    const t0 = performance.now()
+    const id = window.setInterval(() => {
+      setElapsedMs(performance.now() - t0)
+    }, 100)
+    return () => clearInterval(id)
+  }, [gen.isPending])
+
+  const remainingMs = Math.max(0, estimatedMs - elapsedMs)
+  const hintText = gen.isPending
+    ? remainingMs > 200
+      ? `${T.composer.etaRemaining} ${formatEtaSec(remainingMs)}`
+      : T.composer.etaAlmostDone
+    : trimmedLen > 0 && estimatedMs >= 1500
+      ? `${T.composer.etaEstimate} ~${formatEtaSec(estimatedMs)} · ${T.composer.shortcutHint}`
+      : T.composer.shortcutHint
 
   const submit = () => {
     if (!composer.text.trim()) return
@@ -72,12 +100,11 @@ export function Composer() {
             value={composer.text}
             onChange={(e) => composer.setText(e.target.value)}
             placeholder={T.composer.placeholder}
-            className="min-h-[160px] resize-y rounded-[var(--radius-input)] text-[15px] leading-relaxed border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="min-h-[200px] resize-y rounded-[var(--radius-input)] text-[15px] leading-relaxed border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[var(--text-secondary)]"
             style={{
-              background: "var(--glass-thin-bg)",
-              backdropFilter: "blur(var(--glass-thin-blur))",
-              WebkitBackdropFilter: "blur(var(--glass-thin-blur))",
-              border: "1px solid var(--glass-thin-border)",
+              background: "var(--input-well-bg)",
+              border: "1px solid var(--input-well-border)",
+              boxShadow: "var(--input-well-shadow)",
               color: "var(--text-primary)",
             }}
             onKeyDown={(e) => {
@@ -122,19 +149,35 @@ export function Composer() {
         />
 
         {composer.emotionName === "Custom" && (
-          <Textarea
-            value={composer.customInstruct}
-            onChange={(e) => composer.setCustomInstruct(e.target.value)}
-            placeholder={T.emotions.customPlaceholder}
-            className="min-h-[60px] rounded-[var(--radius-input)] text-[14px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-            style={{
-              background: "var(--glass-thin-bg)",
-              backdropFilter: "blur(var(--glass-thin-blur))",
-              WebkitBackdropFilter: "blur(var(--glass-thin-blur))",
-              border: "1px solid var(--glass-thin-border)",
-              color: "var(--text-primary)",
-            }}
-          />
+          <div className="space-y-2">
+            <Textarea
+              value={composer.customInstruct}
+              onChange={(e) => composer.setCustomInstruct(e.target.value)}
+              placeholder={T.emotions.customPlaceholder}
+              className="min-h-[60px] rounded-[var(--radius-input)] text-[14px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[var(--text-secondary)]"
+              style={{
+                background: "var(--input-well-bg)",
+                border: "1px solid var(--input-well-border)",
+                boxShadow: "var(--input-well-shadow)",
+                color: "var(--text-primary)",
+              }}
+            />
+            <div className="flex flex-wrap items-center gap-1.5 text-[12px]">
+              <span className="text-[var(--text-tertiary)] pr-1">
+                {T.emotions.customSamplesHint}
+              </span>
+              {T.emotions.customSamples.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => composer.setCustomInstruct(s)}
+                  className="px-2.5 py-1 rounded-full border border-[var(--input-well-border)] bg-[var(--input-well-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         <div className="flex items-center gap-3 pt-1">
@@ -154,8 +197,11 @@ export function Composer() {
               </>
             )}
           </MagneticButton>
-          <span className="text-[12px] text-[var(--text-tertiary)] hidden sm:inline">
-            {T.composer.shortcutHint}
+          <span
+            className="text-[12px] text-[var(--text-tertiary)] hidden sm:inline tabular-nums"
+            aria-live={gen.isPending ? "polite" : undefined}
+          >
+            {hintText}
           </span>
         </div>
       </GlassCard>

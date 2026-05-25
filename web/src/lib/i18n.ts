@@ -28,6 +28,9 @@ export const T = {
     pickFromLibrary: '从音色库选择',
     emotion: '情绪',
     shortcutHint: '⌘/Ctrl + Enter 快速合成',
+    etaEstimate: '预计',
+    etaRemaining: '还需',
+    etaAlmostDone: '即将完成',
   },
 
   emotions: {
@@ -39,6 +42,15 @@ export const T = {
     calm: '平静',
     custom: '自定义',
     customPlaceholder: '描述你想要的情绪…',
+    customSamplesHint: '试试这些：',
+    customSamples: [
+      '像在悄悄说秘密一样',
+      '用愤怒但克制的语气，缓慢地说',
+      '像在哄孩子入睡，温柔轻缓',
+      '兴奋激动地大声宣布',
+      '用神秘悬疑的语气讲故事',
+      '像新闻主播一样字正腔圆',
+    ] as readonly string[],
   },
 
   voiceCard: {

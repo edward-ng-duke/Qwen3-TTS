@@ -17,10 +17,54 @@ export function formatLanguage(lang: string | undefined): string {
   return LANG_ZH[lang] ?? lang
 }
 
+const ACCENT_ZH: Record<string, string> = {
+  Mandarin: "普通话",
+  Cantonese: "粤语",
+  American: "美式",
+  British: "英式",
+  Standard: "标准",
+}
+
+export function formatAccent(accent: string | undefined): string {
+  if (!accent || accent === "Unknown") return ""
+  return ACCENT_ZH[accent] ?? accent
+}
+
 export function formatSeconds(sec: number): string {
   const m = Math.floor(sec / 60)
   const s = Math.floor(sec % 60)
   return `${m}:${s.toString().padStart(2, "0")}`
+}
+
+// Estimate TTS generation time from text length, derived from local benchmarks:
+// English ~38 ms/char, CJK ~140 ms/char (1 CJK ≈ 1 syllable), plus ~300 ms fixed overhead.
+export function estimateGenerationMs(text: string): number {
+  if (!text) return 0
+  let cjk = 0
+  let ascii = 0
+  for (const ch of text) {
+    const cp = ch.codePointAt(0)
+    if (cp == null) continue
+    if (
+      (cp >= 0x3000 && cp <= 0x9fff) || // CJK punctuation + Hiragana + Katakana + CJK Unified
+      (cp >= 0xac00 && cp <= 0xd7af) || // Hangul
+      (cp >= 0xff00 && cp <= 0xffef) // Halfwidth/Fullwidth
+    ) {
+      cjk++
+    } else if (!/\s/.test(ch)) {
+      ascii++
+    }
+  }
+  return 300 + 140 * cjk + 38 * ascii
+}
+
+export function formatEtaSec(ms: number): string {
+  const sec = ms / 1000
+  if (sec < 10) return `${sec.toFixed(1)}s`
+  if (sec < 60) return `${Math.round(sec)}s`
+  const m = Math.floor(sec / 60)
+  const s = Math.round(sec % 60)
+  return s === 0 ? `${m}m` : `${m}m${s}s`
 }
 
 export function formatRelativeTime(ts: number): string {
