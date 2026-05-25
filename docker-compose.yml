@@ -13,6 +13,16 @@ services:
     #   MODEL_VARIANT=base         → 3-second voice cloning
     environment:
       MODEL_VARIANT: ${MODEL_VARIANT:-customvoice}
+      # User-system auth is auto-enabled when shared Mongo/JWT config is present.
+      # Set AUTH_ENABLED=false to keep the historical open UI behavior.
+      AUTH_ENABLED: ${AUTH_ENABLED:-auto}
+      MONGO_ENABLED: ${MONGO_ENABLED:-false}
+      MONGO_URL: ${MONGO_URL:-}
+      DB_NAME: ${DB_NAME:-conference_ws}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
+      ES_AUTH_ENABLED: ${ES_AUTH_ENABLED:-false}
+      ES_AUTH_URL: ${ES_AUTH_URL:-http://10.0.0.33:9201}
+      ES_USER_INDEX: ${ES_USER_INDEX:-mygpt_user}
     ports:
       - "4967:4967"
     volumes:

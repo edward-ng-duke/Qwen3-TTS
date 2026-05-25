@@ -1,8 +1,9 @@
-import { Moon, Sun, ExternalLink, PanelRightOpen, PanelRightClose } from "lucide-react"
+import { Moon, Sun, ExternalLink, PanelRightOpen, PanelRightClose, LogOut, UserCircle } from "lucide-react"
 import { motion } from "motion/react"
 import { useUiStore } from "@/stores/useUiStore"
 import { useHealth } from "@/hooks/useVoices"
 import { GlassCard } from "@/components/GlassCard"
+import { useAuth } from "@/lib/authContext"
 import { T } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
@@ -24,6 +25,7 @@ export function Topbar() {
   const panelOpen = useUiStore((s) => s.panelOpen)
   const togglePanel = useUiStore((s) => s.togglePanel)
   const { data: health } = useHealth()
+  const auth = useAuth()
   const ready = !!health?.model_ready
 
   const onToggleTheme = () => {
@@ -90,6 +92,15 @@ export function Topbar() {
 
         <div className="flex-1" />
 
+        {auth.enabled && auth.user ? (
+          <div className="hidden md:flex items-center gap-1.5 rounded-full px-2 py-1 text-[12px] text-[var(--text-secondary)] bg-[var(--glass-thin-bg)] border border-[var(--glass-thin-border)] max-w-[180px]">
+            <UserCircle className="size-3.5 shrink-0" />
+            <span className="truncate" title={auth.user.display_name || auth.user.username}>
+              {auth.user.display_name || auth.user.username}
+            </span>
+          </div>
+        ) : null}
+
         <a
           href="/docs"
           target="_blank"
@@ -110,6 +121,20 @@ export function Topbar() {
         >
           {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
         </motion.button>
+
+        {auth.enabled && auth.user ? (
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            transition={spring}
+            aria-label="退出登录"
+            onClick={auth.logout}
+            className="inline-flex items-center justify-center w-8 h-8 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-thin-bg)] transition-colors"
+          >
+            <LogOut className="size-4" />
+          </motion.button>
+        ) : null}
 
         <motion.button
           type="button"

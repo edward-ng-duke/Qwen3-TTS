@@ -1,6 +1,12 @@
 # Qwen3-TTS deployment shortcuts.
 # Run `make help` for the list of targets.
 
+ENV_FILE ?= .env
+ifneq (,$(wildcard $(ENV_FILE)))
+include $(ENV_FILE)
+export
+endif
+
 PORT       ?= 4967
 WEB_PORT   ?= 4968
 IMAGE      ?= qwen3-tts:local
@@ -11,6 +17,7 @@ WEIGHTS_DIR := models/Qwen3-TTS-12Hz-1.7B-CustomVoice
 
 help:
 	@echo "Qwen3-TTS — make targets:"
+	@echo "  env: $(ENV_FILE)$(if $(wildcard $(ENV_FILE)), loaded, missing; copy .env.example to .env)"
 	@echo "  make download   Download model weights to ./$(WEIGHTS_DIR) (HF; WEIGHT_SOURCE=ms for ModelScope)"
 	@echo "  make build      Build the docker image ($(IMAGE))"
 	@echo "  make up         Start the container in the background"
@@ -82,6 +89,8 @@ test:
 
 dev:
 	@command -v npm >/dev/null 2>&1 || { echo "[make] npm not found — install Node.js first"; exit 1; }
+	@echo "[make] env: $(ENV_FILE)$(if $(wildcard $(ENV_FILE)), loaded, missing)"
+	@echo "[make] auth: AUTH_ENABLED=$${AUTH_ENABLED:-auto} MONGO_URL=$${MONGO_URL:+set} ES_AUTH_ENABLED=$${ES_AUTH_ENABLED:-false}"
 	@if [ ! -d web/node_modules ]; then \
 		echo "[make] web/node_modules missing → npm install"; \
 		cd web && npm install; \
