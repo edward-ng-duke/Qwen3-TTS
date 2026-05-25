@@ -19,6 +19,13 @@ function isAuthDisabled(error: unknown): boolean {
   return error instanceof ApiError && error.status === 404 && !authRequired
 }
 
+function authBackendMissingMessage(error: unknown): string {
+  if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
+    return "当前 4967 后端还没有认证接口；可以预览登录页，真实登录需要启动带认证的新后端。"
+  }
+  return ""
+}
+
 function AuthLoading() {
   return (
     <div className="h-screen grid place-items-center text-[var(--text-primary)]">
@@ -56,7 +63,7 @@ function LoginPage({
       window.location.assign(next)
     } catch (error) {
       const detail = error instanceof ApiError ? error.detail : ""
-      setMessage(detail || "登录失败，请检查账号和密码")
+      setMessage(authBackendMissingMessage(error) || detail || "登录失败，请检查账号和密码")
     } finally {
       setSubmitting(false)
     }
@@ -201,11 +208,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
           if (!cancelled) {
             setUser(null)
             setEnabled(true)
-            setLoginMessage(exchangeError instanceof ApiError && exchangeError.status === 404
-              ? "认证接口未启用，请先重启带认证的新后端"
-              : exchangeError instanceof ApiError && exchangeError.status === 503
+            setLoginMessage(authBackendMissingMessage(exchangeError)
+              || (exchangeError instanceof ApiError && exchangeError.status === 503
                 ? "认证服务暂不可用"
-                : "")
+                : ""))
           }
         }
       } finally {
