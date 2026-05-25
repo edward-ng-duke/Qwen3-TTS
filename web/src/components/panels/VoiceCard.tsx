@@ -1,15 +1,22 @@
 import { useRef, useState } from "react"
 import type { KeyboardEvent } from "react"
 import { Play, Pause, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { motion, AnimatePresence } from "motion/react"
 import { Badge } from "@/components/ui/badge"
 import type { VoiceInfo } from "@/lib/api"
 import { api } from "@/lib/api"
+import { T } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { formatLanguage } from "@/lib/format"
 
-const GENDER_ZH: Record<string, string> = { female: "女", male: "男", unknown: "" }
-const AGE_ZH: Record<string, string> = { young: "青年", adult: "成年", senior: "年长", child: "儿童" }
+const AGE_ZH: Record<string, string> = {
+  young: "青年",
+  adult: "成年",
+  senior: "年长",
+  child: "儿童",
+}
+
+const spring = { type: "spring", stiffness: 300, damping: 26 } as const
 
 interface Props {
   voice: VoiceInfo
@@ -45,47 +52,97 @@ export function VoiceCard({ voice, selected, onSelect }: Props) {
     }
   }
 
+  const genderZh = T.voiceCard.genderValue[voice.gender] ?? ""
+
   return (
-    <div
+    <motion.div
       role="button"
       tabIndex={0}
       aria-pressed={selected}
       onClick={onSelect}
       onKeyDown={onKeyDown}
+      whileTap={{ scale: 0.98 }}
+      transition={spring}
       className={cn(
-        "w-full text-left rounded-card border p-3 transition outline-none focus-visible:ring-2 focus-visible:ring-accent/50",
-        selected
-          ? "border-accent bg-accent/5"
-          : "border-border bg-surface hover:bg-surface-2"
+        "relative w-full text-left rounded-[var(--radius-card)] p-3 outline-none cursor-pointer",
+        "focus-visible:[box-shadow:0_0_0_3px_var(--brand-glow)]",
       )}
+      style={{
+        background: "var(--glass-regular-bg)",
+        backdropFilter: "blur(var(--glass-regular-blur)) saturate(180%)",
+        WebkitBackdropFilter: "blur(var(--glass-regular-blur)) saturate(180%)",
+        border: "1px solid var(--glass-regular-border)",
+        boxShadow: "var(--glass-inset-highlight)",
+      }}
     >
-      <div className="flex items-center gap-2">
-        <span className="font-medium text-sm">{voice.display_name}</span>
-        {selected && <Check className="size-3.5 text-accent" />}
-        <Button
-          variant="ghost" size="icon"
+      <AnimatePresence>
+        {selected && (
+          <motion.span
+            aria-hidden
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={spring}
+            className="absolute inset-0 rounded-[inherit] pointer-events-none"
+            style={{
+              boxShadow:
+                "inset 0 0 0 1.5px var(--brand), 0 0 24px var(--brand-glow)",
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="relative flex items-center gap-2">
+        <span className="font-medium text-[14px] text-[var(--text-primary)]">
+          {voice.display_name}
+        </span>
+        {selected && (
+          <Check
+            className="size-3.5"
+            style={{ color: "var(--brand)" }}
+            aria-label={T.voiceCard.selected}
+          />
+        )}
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          transition={spring}
           onClick={togglePreview}
-          aria-label={playing ? "暂停" : "试听"}
-          className="ml-auto h-7 w-7"
+          aria-label={playing ? T.voiceCard.pausePreview : T.voiceCard.preview}
+          className="ml-auto inline-flex items-center justify-center w-7 h-7 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-thin-bg)] transition-colors"
         >
           {playing ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
-        </Button>
+        </motion.button>
       </div>
-      <div className="mt-1.5 flex flex-wrap gap-1">
-        {GENDER_ZH[voice.gender] && (
-          <Badge variant="secondary" className="text-xs px-1.5 py-0">{GENDER_ZH[voice.gender]}</Badge>
+
+      <div className="relative mt-1.5 flex flex-wrap gap-1">
+        {genderZh && (
+          <Badge variant="secondary" className="text-[11px] px-1.5 py-0">
+            {genderZh}
+          </Badge>
         )}
-        <Badge variant="secondary" className="text-xs px-1.5 py-0">{formatLanguage(voice.language)}</Badge>
+        <Badge variant="secondary" className="text-[11px] px-1.5 py-0">
+          {formatLanguage(voice.language)}
+        </Badge>
         {voice.accent && voice.accent !== "Unknown" && (
-          <Badge variant="secondary" className="text-xs px-1.5 py-0">{voice.accent}</Badge>
+          <Badge variant="secondary" className="text-[11px] px-1.5 py-0">
+            {voice.accent}
+          </Badge>
         )}
         {AGE_ZH[voice.age_group] && (
-          <Badge variant="secondary" className="text-xs px-1.5 py-0">{AGE_ZH[voice.age_group]}</Badge>
+          <Badge variant="secondary" className="text-[11px] px-1.5 py-0">
+            {AGE_ZH[voice.age_group]}
+          </Badge>
         )}
       </div>
+
       {voice.description && (
-        <p className="mt-1.5 text-xs text-text-muted leading-snug">{voice.description}</p>
+        <p className="relative mt-1.5 text-[12px] text-[var(--text-secondary)] leading-snug">
+          {voice.description}
+        </p>
       )}
+
       <audio
         ref={audioRef}
         src={api.previewUrl(voice.id)}
@@ -94,6 +151,6 @@ export function VoiceCard({ voice, selected, onSelect }: Props) {
         preload="none"
         hidden
       />
-    </div>
+    </motion.div>
   )
 }
