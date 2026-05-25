@@ -12,6 +12,13 @@ WEB_PORT   ?= 4968
 IMAGE      ?= qwen3-tts:local
 CONTAINER  ?= qwen3-tts
 WEIGHTS_DIR := models/Qwen3-TTS-12Hz-1.7B-CustomVoice
+AUTH_TRUE_VALUES := true 1 yes on
+AUTH_FALSE_VALUES := false 0 no off
+AUTH_ON := $(filter $(AUTH_TRUE_VALUES),$(AUTH_ENABLED))
+AUTH_OFF := $(filter $(AUTH_FALSE_VALUES),$(AUTH_ENABLED))
+AUTH_AUTO_SIGNAL := $(or $(MONGO_URL),$(filter $(AUTH_TRUE_VALUES),$(MONGO_ENABLED)),$(filter $(AUTH_TRUE_VALUES),$(ES_AUTH_ENABLED)))
+VITE_AUTH_REQUIRED ?= $(if $(AUTH_OFF),false,$(if $(or $(AUTH_ON),$(AUTH_AUTO_SIGNAL)),true,false))
+export VITE_AUTH_REQUIRED
 
 .PHONY: help download build up down restart logs ps health deploy redeploy test clean nuke web-dev web-build dev
 
@@ -90,7 +97,7 @@ test:
 dev:
 	@command -v npm >/dev/null 2>&1 || { echo "[make] npm not found — install Node.js first"; exit 1; }
 	@echo "[make] env: $(ENV_FILE)$(if $(wildcard $(ENV_FILE)), loaded, missing)"
-	@echo "[make] auth: AUTH_ENABLED=$${AUTH_ENABLED:-auto} MONGO_URL=$${MONGO_URL:+set} ES_AUTH_ENABLED=$${ES_AUTH_ENABLED:-false}"
+	@echo "[make] auth: AUTH_ENABLED=$${AUTH_ENABLED:-auto} MONGO_URL=$${MONGO_URL:+set} ES_AUTH_ENABLED=$${ES_AUTH_ENABLED:-false} VITE_AUTH_REQUIRED=$(VITE_AUTH_REQUIRED)"
 	@if [ ! -d web/node_modules ]; then \
 		echo "[make] web/node_modules missing → npm install"; \
 		cd web && npm install; \
@@ -102,6 +109,14 @@ dev:
 		echo "MISSING"; \
 		echo "[make] tip: in another shell run 'make up' (or 'make deploy') to start the API"; \
 		echo "[make] starting Vite anyway — front-end will work, API calls will 502 until backend is up"; \
+	fi
+	@if [ "$(VITE_AUTH_REQUIRED)" = "true" ]; then \
+		code=$$(curl -sS -o /dev/null -w '%{http_code}' -m 2 "http://localhost:$(PORT)/api/auth/me" 2>/dev/null || true); \
+		if [ "$$code" = "404" ]; then \
+			echo "[make] auth route missing on :$(PORT); rebuild/restart backend before using authenticated dev"; \
+			echo "[make] run: docker compose down && docker compose build && docker compose up -d"; \
+			exit 1; \
+		fi; \
 	fi
 	@echo "[make] vite dev → http://0.0.0.0:$(WEB_PORT)  (proxies /v1 → http://localhost:$(PORT))"
 	@cd web && npm run dev -- --host 0.0.0.0 --port $(WEB_PORT) --strictPort

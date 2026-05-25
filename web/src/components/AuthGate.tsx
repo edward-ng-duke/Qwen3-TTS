@@ -15,7 +15,8 @@ function safeNext(value: string | null): string {
 }
 
 function isAuthDisabled(error: unknown): boolean {
-  return error instanceof ApiError && error.status === 404
+  const authRequired = import.meta.env.VITE_AUTH_REQUIRED === "true"
+  return error instanceof ApiError && error.status === 404 && !authRequired
 }
 
 function AuthLoading() {
@@ -200,9 +201,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
           if (!cancelled) {
             setUser(null)
             setEnabled(true)
-            setLoginMessage(exchangeError instanceof ApiError && exchangeError.status === 503
-              ? "认证服务暂不可用"
-              : "")
+            setLoginMessage(exchangeError instanceof ApiError && exchangeError.status === 404
+              ? "认证接口未启用，请先重启带认证的新后端"
+              : exchangeError instanceof ApiError && exchangeError.status === 503
+                ? "认证服务暂不可用"
+                : "")
           }
         }
       } finally {
