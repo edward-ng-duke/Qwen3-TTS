@@ -40,21 +40,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl \
 
 WORKDIR /app
 
-COPY pyproject.toml MANIFEST.in ./
-
 # NGC PyTorch 24.10 ships torch 2.5.0a0 + torchvision (matched) but NO
 # torchaudio. Installing only torchaudio from PyPI causes pip to "upgrade"
 # torch to 2.5.0 stable (its hard dep) and leave torchvision behind, broken.
 # Solution: install the matching torch / torchvision / torchaudio triple from
 # the PyTorch CUDA-12.4 index in one shot, then pin them via a constraints
 # file so `pip install -e .[serve]` does not touch them again.
-# Layered BEFORE `COPY qwen_tts/` so that app-only edits don't invalidate this
-# 3 GB layer; BuildKit cache mounts on /root/.cache/pip cover the constraints
-# step which does depend on qwen_tts/.
+# Layered before project metadata and source so dependency/app edits don't
+# invalidate this 3 GB layer.
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --index-url https://download.pytorch.org/whl/cu124 \
         torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1
 
+COPY pyproject.toml MANIFEST.in ./
 COPY qwen_tts/ ./qwen_tts/
 
 RUN --mount=type=cache,target=/root/.cache/pip \
