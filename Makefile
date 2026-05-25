@@ -2,6 +2,7 @@
 # Run `make help` for the list of targets.
 
 PORT       ?= 4967
+WEB_PORT   ?= 4968
 IMAGE      ?= qwen3-tts:local
 CONTAINER  ?= qwen3-tts
 WEIGHTS_DIR := models/Qwen3-TTS-12Hz-1.7B-CustomVoice
@@ -21,7 +22,7 @@ help:
 	@echo "  make deploy     download (if needed) + build + up + wait for ready"
 	@echo "  make redeploy   down + build + up + wait for ready (skips download)"
 	@echo "  make test       Run pytest"
-	@echo "  make dev        Run Vite dev server on :5173, reuse running API at :$(PORT)"
+	@echo "  make dev        Run Vite dev server on :$(WEB_PORT), reuse running API at :$(PORT)"
 	@echo "  make web-dev    Alias of 'make dev' (always runs npm install first)"
 	@echo "  make web-build  Build web/dist locally (Docker does this in its build stage)"
 	@echo "  make clean      Remove container + image (keeps weights and preview cache)"
@@ -93,11 +94,11 @@ dev:
 		echo "[make] tip: in another shell run 'make up' (or 'make deploy') to start the API"; \
 		echo "[make] starting Vite anyway — front-end will work, API calls will 502 until backend is up"; \
 	fi
-	@echo "[make] vite dev → http://localhost:5173  (proxies /v1 → http://localhost:$(PORT))"
-	@cd web && npm run dev
+	@echo "[make] vite dev → http://localhost:$(WEB_PORT)  (proxies /v1 → http://localhost:$(PORT))"
+	@cd web && npm run dev -- --port $(WEB_PORT) --strictPort
 
 web-dev:
-	@cd web && npm install && npm run dev
+	@cd web && npm install && npm run dev -- --port $(WEB_PORT) --strictPort
 
 web-build:
 	@cd web && npm install && npm run build
