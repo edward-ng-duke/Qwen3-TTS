@@ -1,26 +1,45 @@
+import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
 
 interface SoundWaveProps {
   className?: string
   bars?: number
-  color?: string  // CSS color or var
+  /** CSS color, gradient, or var — defaults to brand gradient */
+  color?: string
 }
 
-export function SoundWave({ className, bars = 5, color = "currentColor" }: SoundWaveProps) {
+export function SoundWave({
+  className,
+  bars = 12,
+  color = "var(--brand-gradient)",
+}: SoundWaveProps) {
   return (
-    <div className={cn("inline-flex items-end gap-[3px] h-4", className)} aria-label="生成中">
-      {Array.from({ length: bars }).map((_, i) => (
-        <span
-          key={i}
-          className="block w-[3px] rounded-sm"
-          style={{
-            backgroundColor: color,
-            animation: `sw-bar 900ms ease-in-out ${i * 90}ms infinite`,
-            height: "30%",
-          }}
-        />
-      ))}
-      <style>{`@keyframes sw-bar { 0%,100% { height: 30% } 50% { height: 100% } }`}</style>
+    <div
+      className={cn("inline-flex items-center gap-[3px] h-[18px]", className)}
+      role="img"
+      aria-label="正在生成"
+    >
+      {Array.from({ length: bars }).map((_, i) => {
+        // Each bar gets a slightly different period and phase so the
+        // wave reads as organic rather than mechanically uniform.
+        const duration = 0.7 + (i % 5) * 0.07
+        const delay = -((i * 137) % 1000) / 1000
+        return (
+          <motion.span
+            key={i}
+            className="block w-[3px] rounded-full origin-center"
+            style={{ height: 16, background: color, willChange: "transform" }}
+            initial={{ scaleY: 0.25 }}
+            animate={{ scaleY: [0.25, 1, 0.45, 0.85, 0.3] }}
+            transition={{
+              duration,
+              delay,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        )
+      })}
     </div>
   )
 }
