@@ -34,6 +34,7 @@ followups.md
 # Local tooling / agent state (not project source).
 .claude/
 .playwright-mcp/
+.cache/
 
 # Ad-hoc UI iteration screenshots at repo root.
 /empty.png
