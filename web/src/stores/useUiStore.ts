@@ -27,7 +27,7 @@ const ADVANCED_DEFAULTS: SamplingParams = {
 export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
-      theme: "dark",
+      theme: "light",
       panelOpen: true,
       panelTab: "voices",
       advanced: ADVANCED_DEFAULTS,
@@ -38,6 +38,18 @@ export const useUiStore = create<UiState>()(
       setAdvanced: (patch) => set((s) => ({ advanced: { ...s.advanced, ...patch } })),
       resetAdvanced: () => set({ advanced: ADVANCED_DEFAULTS }),
     }),
-    { name: "qwen-tts-ui" }
+    {
+      name: "qwen-tts-ui",
+      // Bump when we want to force-reset some persisted state. v2 forces theme
+      // back to "light" while keeping the user's panel/advanced settings.
+      version: 2,
+      migrate: (persistedState, fromVersion) => {
+        const s = (persistedState ?? {}) as Partial<UiState>
+        if (fromVersion < 2) {
+          return { ...s, theme: "light" as Theme }
+        }
+        return s
+      },
+    }
   )
 )
