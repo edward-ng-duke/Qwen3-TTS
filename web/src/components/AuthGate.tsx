@@ -59,8 +59,11 @@ function LoginPage({
     setMessage("")
     try {
       const result = await api.login(username.trim(), password, rememberMe)
+      // Update URL first so isLoginRoute recomputes to false on the next render.
+      if (window.location.pathname !== next) {
+        window.history.replaceState(null, "", next)
+      }
       onAuthenticated(result.user)
-      window.location.assign(next)
     } catch (error) {
       const detail = error instanceof ApiError ? error.detail : ""
       setMessage(authBackendMissingMessage(error) || detail || "登录失败，请检查账号和密码")
@@ -220,7 +223,12 @@ export function AuthGate({ children }: { children: ReactNode }) {
     }
     check()
     return () => { cancelled = true }
-  }, [isLoginRoute])
+    // Run only on mount. After login, AuthGate state is updated in-place via
+    // onAuthenticated + history.replaceState — re-firing this effect on URL
+    // change would issue a redundant /me call and risk a transient 401 race
+    // that bounces the user back to the login page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const logout = useCallback(async () => {
     try {
