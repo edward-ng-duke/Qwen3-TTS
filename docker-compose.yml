@@ -19,10 +19,14 @@ services:
       MONGO_ENABLED: ${MONGO_ENABLED:-false}
       MONGO_URL: ${MONGO_URL:-}
       DB_NAME: ${DB_NAME:-conference_ws}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
       ES_AUTH_ENABLED: ${ES_AUTH_ENABLED:-false}
       ES_AUTH_URL: ${ES_AUTH_URL:-http://10.0.0.33:9201}
       ES_USER_INDEX: ${ES_USER_INDEX:-mygpt_user}
+    secrets:
+      - jwt_secret
+    command: >
+      bash -lc 'export JWT_SECRET_KEY="$(tr -d "\r\n" < /run/secrets/jwt_secret)";
+      exec python -m qwen_tts.serve --host 0.0.0.0 --port 4967'
     ports:
       - "4967:4967"
     volumes:
@@ -38,3 +42,7 @@ services:
 
 volumes:
   qwen-tts-previews:
+
+secrets:
+  jwt_secret:
+    file: ${JWT_SECRET_FILE:-./auth_doc/jwt}

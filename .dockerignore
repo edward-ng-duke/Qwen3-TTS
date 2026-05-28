@@ -33,3 +33,4 @@ followups.md
 web/node_modules
 web/dist
 web/.vite
+auth_doc/jwt

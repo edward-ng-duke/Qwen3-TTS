@@ -6,6 +6,11 @@ ifneq (,$(wildcard $(ENV_FILE)))
 include $(ENV_FILE)
 export
 endif
+# Runtime JWT material is intentionally sourced from this local file, not from
+# a raw JWT_SECRET_KEY in .env.
+JWT_SECRET_FILE ?= $(CURDIR)/auth_doc/jwt
+export JWT_SECRET_FILE
+unexport JWT_SECRET_KEY
 
 PORT       ?= 4967
 WEB_PORT   ?= 4968
@@ -30,7 +35,7 @@ AUTH_AUTO_SIGNAL := $(or $(MONGO_URL),$(filter $(AUTH_TRUE_VALUES),$(MONGO_ENABL
 VITE_AUTH_REQUIRED ?= $(if $(AUTH_OFF),false,$(if $(or $(AUTH_ON),$(AUTH_AUTO_SIGNAL)),true,false))
 export VITE_AUTH_REQUIRED
 
-.PHONY: help download build up down restart logs ps health deploy redeploy test clean nuke web-dev web-build dev api-dev wait-ready stop stop-dev free-dev-port free-deploy-port
+.PHONY: help download build up down restart logs ps health deploy redeploy test clean nuke web-dev web-build dev api-dev wait-ready stop stop-dev free-dev-port free-deploy-port jwt-secret-check
 
 help:
 	@echo "Qwen3-TTS — make targets:"
@@ -54,6 +59,7 @@ help:
 	@echo "  make stop       Everything off: stop-dev + docker compose down"
 	@echo "  make clean      Remove container + image (keeps weights and preview cache)"
 	@echo "  make nuke       Same as clean + deletes preview volume (keeps weights)"
+	@echo "  JWT secret:     $(JWT_SECRET_FILE) (raw secret is not read from .env)"
 	@echo ""
 	@echo "Demo UI:  http://localhost:$(PORT)/"
 	@echo "API:      http://localhost:$(PORT)/v1/*  (Swagger at /docs)"
@@ -68,7 +74,12 @@ download:
 build:
 	docker compose build $(NO_CACHE_FLAG)
 
-up:
+jwt-secret-check:
+	@secret="$$(JWT_SECRET_FILE="$(JWT_SECRET_FILE)" bash scripts/read_jwt_secret.sh)"; \
+	fp=$$(printf '%s' "$$secret" | sha256sum | awk '{print substr($$1,1,8)}'); \
+	echo "[make] jwt secret: $(JWT_SECRET_FILE) jwt_fp=$$fp"
+
+up: jwt-secret-check
 	docker compose up -d
 	@echo "[make] container starting; demo UI: http://localhost:$(PORT)/"
 
@@ -110,10 +121,10 @@ wait-ready:
 	done; \
 	echo "[make] timeout"; docker logs $(CONTAINER) --tail 40; exit 1
 
-deploy: free-deploy-port download build up wait-ready
+deploy: jwt-secret-check free-deploy-port download build up wait-ready
 	@echo "[make] deploy complete → http://localhost:$(PORT)/"
 
-redeploy: down build up wait-ready
+redeploy: jwt-secret-check down build up wait-ready
 	@echo "[make] redeploy complete → http://localhost:$(PORT)/"
 
 test:
@@ -145,14 +156,14 @@ free-dev-port free-deploy-port:
 		fi; \
 	done
 
-api-dev: free-dev-port
+api-dev: jwt-secret-check free-dev-port
 	@command -v python >/dev/null 2>&1 || { echo "[make] python not found — activate your venv first"; exit 1; }
 	@echo "[make] env: $(ENV_FILE)$(if $(wildcard $(ENV_FILE)), loaded, missing)"
 	@echo "[make] auth: AUTH_ENABLED=$${AUTH_ENABLED:-auto} MONGO_URL=$${MONGO_URL:+set} ES_AUTH_ENABLED=$${ES_AUTH_ENABLED:-false}"
 	@echo "[make] api-dev → http://0.0.0.0:$(DEV_PORT)  (local uvicorn, no docker)"
-	@PORT=$(DEV_PORT) MODELS_ROOT=$(CURDIR)/models ATTN_IMPL=$(LOCAL_ATTN_IMPL) PREVIEW_CACHE_DIR=$(CURDIR)/.cache/previews python -m qwen_tts.serve --host 0.0.0.0 --port $(DEV_PORT)
+	@JWT_SECRET_KEY="$$(JWT_SECRET_FILE="$(JWT_SECRET_FILE)" bash scripts/read_jwt_secret.sh)" PORT=$(DEV_PORT) MODELS_ROOT=$(CURDIR)/models ATTN_IMPL=$(LOCAL_ATTN_IMPL) PREVIEW_CACHE_DIR=$(CURDIR)/.cache/previews python -m qwen_tts.serve --host 0.0.0.0 --port $(DEV_PORT)
 
-dev: free-dev-port
+dev: jwt-secret-check free-dev-port
 	@command -v npm >/dev/null 2>&1 || { echo "[make] npm not found — install Node.js first"; exit 1; }
 	@command -v python >/dev/null 2>&1 || { echo "[make] python not found — activate your venv first"; exit 1; }
 	@echo "[make] env: $(ENV_FILE)$(if $(wildcard $(ENV_FILE)), loaded, missing)"
@@ -163,7 +174,7 @@ dev: free-dev-port
 	fi
 	@echo "[make] starting local backend on :$(DEV_PORT) (background) + vite on :$(DEV_WEB_PORT) (foreground)"
 	@set -e; \
-	PORT=$(DEV_PORT) MODELS_ROOT=$(CURDIR)/models ATTN_IMPL=$(LOCAL_ATTN_IMPL) PREVIEW_CACHE_DIR=$(CURDIR)/.cache/previews python -m qwen_tts.serve --host 0.0.0.0 --port $(DEV_PORT) > /tmp/qwen3-tts-api-dev.log 2>&1 & \
+	JWT_SECRET_KEY="$$(JWT_SECRET_FILE="$(JWT_SECRET_FILE)" bash scripts/read_jwt_secret.sh)" PORT=$(DEV_PORT) MODELS_ROOT=$(CURDIR)/models ATTN_IMPL=$(LOCAL_ATTN_IMPL) PREVIEW_CACHE_DIR=$(CURDIR)/.cache/previews python -m qwen_tts.serve --host 0.0.0.0 --port $(DEV_PORT) > /tmp/qwen3-tts-api-dev.log 2>&1 & \
 	api_pid=$$!; \
 	echo "[make] api-dev pid=$$api_pid  log=/tmp/qwen3-tts-api-dev.log"; \
 	trap 'echo "[make] stopping api-dev (pid=$$api_pid)"; kill $$api_pid 2>/dev/null || true; wait $$api_pid 2>/dev/null || true' EXIT INT TERM; \

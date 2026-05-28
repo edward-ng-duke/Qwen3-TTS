@@ -35,6 +35,7 @@ followups.md
 .claude/
 .playwright-mcp/
 .cache/
+/auth_doc/jwt
 
 # Ad-hoc UI iteration screenshots at repo root.
 /empty.png
