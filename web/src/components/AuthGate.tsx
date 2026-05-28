@@ -6,6 +6,7 @@ import { AuroraBackground } from "@/components/AuroraBackground"
 import { GlassCard } from "@/components/GlassCard"
 import { api, ApiError, type AuthUser } from "@/lib/api"
 import { AuthContext } from "@/lib/authContext"
+import { clearAuthSession, setAuthToken, setAuthUser } from "@/lib/authStorage"
 
 function safeNext(value: string | null): string {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/login")) {
@@ -59,6 +60,8 @@ function LoginPage({
     setMessage("")
     try {
       const result = await api.login(username.trim(), password, rememberMe)
+      setAuthToken(result.access_token)
+      setAuthUser(result.user)
       // Update URL first so isLoginRoute recomputes to false on the next render.
       if (window.location.pathname !== next) {
         window.history.replaceState(null, "", next)
@@ -194,6 +197,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
         try {
           const exchanged = await api.verifyEsToken()
           if (cancelled) return
+          setAuthToken(exchanged.access_token)
+          setAuthUser(exchanged.user)
           setUser(exchanged.user)
           setEnabled(true)
           if (isLoginRoute) {
@@ -236,6 +241,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     } catch {
       // A local redirect is still the right result if the cookie was already gone.
     }
+    clearAuthSession()
     toast.info("已退出登录")
     window.location.assign(`/login?next=${encodeURIComponent("/")}`)
   }, [])

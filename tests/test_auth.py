@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+import jwt
 from fastapi.testclient import TestClient
 
 from qwen_tts.serve import model as model_mod
@@ -153,22 +154,32 @@ def _client(monkeypatch, tmp_path, web_dist, auth_state):
     return TestClient(app)
 
 
-def test_auth_protects_browser_ui_but_leaves_v1_public(monkeypatch, tmp_path, web_dist):
+def test_auth_serves_browser_shell_before_sso_bootstrap_but_protects_server_ui(
+    monkeypatch, tmp_path, web_dist
+):
     repo = MemoryUserRepository([_user()])
     state = _auth_state(repo)
 
     with _client(monkeypatch, tmp_path, web_dist, state) as client:
         root = client.get("/", headers={"accept": "text/html"}, follow_redirects=False)
-        assert root.status_code in (307, 308)
-        assert root.headers["location"] == "/login?next=/"
+        assert root.status_code == 200
+        assert "<div id='root'></div>" in root.text
+
+        docs = client.get("/docs", headers={"accept": "text/html"}, follow_redirects=False)
+        assert docs.status_code in (307, 308)
+        assert docs.headers["location"] == "/login?next=/docs"
+
+        legacy = client.get("/legacy", headers={"accept": "text/html"}, follow_redirects=False)
+        assert legacy.status_code in (307, 308)
+        assert legacy.headers["location"] == "/login?next=/legacy"
 
         assert client.get("/v1/health").status_code == 200
 
         token = state.auth_service.create_token(repo.users["u1"])
         client.cookies.set("access_token", token)
-        authed = client.get("/", headers={"accept": "text/html"})
+        authed = client.get("/docs", headers={"accept": "text/html"})
         assert authed.status_code == 200
-        assert "<div id='root'></div>" in authed.text
+        assert "swagger" in authed.text.lower()
 
 
 def test_disabled_user_token_is_rejected(monkeypatch, tmp_path, web_dist):
@@ -180,6 +191,65 @@ def test_disabled_user_token_is_rejected(monkeypatch, tmp_path, web_dist):
         client.cookies.set("access_token", state.auth_service.create_token(user))
         r = client.get("/api/auth/me")
         assert r.status_code == 401
+
+
+def test_homepage_style_bearer_token_authenticates_user(monkeypatch, tmp_path, web_dist):
+    repo = MemoryUserRepository([_user(user_id="homepage-u1", username="homepageuser")])
+    state = _auth_state(repo)
+    token = jwt.encode(
+        {
+            "sub": "homepage-u1",
+            "username": "homepageuser",
+            "role": "user",
+            "iat": 1_700_000_000,
+            "exp": 4_102_444_800,
+        },
+        state.config.jwt_secret_key,
+        algorithm=state.config.jwt_algorithm,
+    )
+
+    with _client(monkeypatch, tmp_path, web_dist, state) as client:
+        r = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+
+    assert r.status_code == 200
+    assert r.json()["user"]["id"] == "homepage-u1"
+    assert r.json()["user"]["username"] == "homepageuser"
+
+
+def test_homepage_style_bearer_token_rejects_missing_user(monkeypatch, tmp_path, web_dist):
+    repo = MemoryUserRepository([])
+    state = _auth_state(repo)
+    token = jwt.encode(
+        {
+            "sub": "deleted-u1",
+            "username": "deleted",
+            "role": "user",
+            "iat": 1_700_000_000,
+            "exp": 4_102_444_800,
+        },
+        state.config.jwt_secret_key,
+        algorithm=state.config.jwt_algorithm,
+    )
+
+    with _client(monkeypatch, tmp_path, web_dist, state) as client:
+        r = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_auth_startup_logs_only_jwt_fp(caplog):
+    state = AuthState.ready(
+        config=AuthConfig(enabled=True, jwt_secret_key="test-secret", es_auth_enabled=False),
+        repository=MemoryUserRepository(),
+    )
+
+    with caplog.at_level("INFO", logger="qwen_tts.serve.auth.state"):
+        await state.startup()
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any("jwt_fp=" in message for message in messages)
+    assert not any("jwt_secret_fingerprint" in message for message in messages)
 
 
 def test_existing_user_can_login_and_logout(monkeypatch, tmp_path, web_dist):

@@ -49,7 +49,7 @@ class AuthState:
         return self.enabled and self.error is None and self.auth_service is not None
 
     async def startup(self) -> None:
-        if not self.config.enabled or self.auth_service is not None:
+        if not self.config.enabled:
             return
         if self.config.missing_secret:
             self.error = "JWT_SECRET_KEY is required when auth is enabled"
@@ -57,7 +57,9 @@ class AuthState:
             return
 
         fingerprint = hashlib.sha256(self.config.jwt_secret_key.encode("utf-8")).hexdigest()[:8]
-        log.info("Auth enabled jwt_secret_fingerprint=%s", fingerprint)
+        log.info("Auth enabled jwt_fp=%s", fingerprint)
+        if self.auth_service is not None:
+            return
         try:
             from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -82,4 +84,3 @@ class AuthState:
             await self.es_auth_service.close()
         if self.mongo_client is not None:
             self.mongo_client.close()
-

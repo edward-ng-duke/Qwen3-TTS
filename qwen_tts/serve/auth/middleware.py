@@ -9,9 +9,9 @@ STATIC_EXTENSIONS = {
     ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico",
     ".webp", ".avif", ".woff", ".woff2", ".ttf", ".map",
 }
-PUBLIC_EXACT = {"/login", "/favicon.ico", "/favicon.svg"}
+PUBLIC_EXACT = {"/", "/login", "/favicon.ico", "/favicon.svg"}
 PUBLIC_PREFIXES = ("/v1", "/api/auth", "/assets")
-PROTECTED_EXACT = {"/", "/docs", "/redoc", "/openapi.json"}
+PROTECTED_EXACT = {"/docs", "/redoc", "/openapi.json"}
 PROTECTED_PREFIXES = ("/legacy",)
 
 
@@ -41,8 +41,8 @@ def requires_auth(path: str) -> bool:
         return True
     if any(path.startswith(prefix) for prefix in PROTECTED_PREFIXES):
         return True
-    # React router fallback paths should not expose the app shell anonymously.
-    return not path.startswith("/api/")
+    # React router fallback paths must load before location.hash can be parsed.
+    return False
 
 
 def wants_html(request: Request) -> bool:
@@ -80,4 +80,3 @@ class AuthMiddleware(BaseHTTPMiddleware):
         status = 503 if state.error else 401
         detail = state.error or "authentication required"
         return JSONResponse({"detail": detail}, status_code=status)
-

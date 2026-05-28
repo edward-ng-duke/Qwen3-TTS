@@ -1,4 +1,6 @@
 // 与 qwen_tts/serve/schemas.py 对齐
+import { getAuthToken, setAuthUser } from "@/lib/authStorage"
+
 export type AudioFormat = "wav" | "mp3" | "flac" | "pcm"
 
 export interface VoiceInfo {
@@ -64,8 +66,17 @@ export class ApiError extends Error {
 
 const BASE = "" // 同源，dev 由 vite proxy 转发
 
+function withAuth(init?: RequestInit): RequestInit {
+  const headers = new Headers(init?.headers)
+  const token = getAuthToken()
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`)
+  }
+  return { credentials: "include", ...init, headers }
+}
+
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const r = await fetch(BASE + path, { credentials: "include", ...init })
+  const r = await fetch(BASE + path, withAuth(init))
   if (!r.ok) {
     let detail = await r.text().catch(() => "")
     try { const j = JSON.parse(detail); detail = j.detail ?? detail } catch { /* ignore non-JSON error body */ }
@@ -79,7 +90,10 @@ export const api = {
   voices: () => fetchJson<{ voices: VoiceInfo[] }>("/v1/voices").then(d => d.voices),
   languages: () => fetchJson<{ languages: string[] }>("/v1/languages").then(d => d.languages),
   previewUrl: (id: string) => `${BASE}/v1/voices/${encodeURIComponent(id)}/preview`,
-  me: () => fetchJson<{ user: AuthUser }>("/api/auth/me").then(d => d.user),
+  me: () => fetchJson<{ user: AuthUser }>("/api/auth/me").then((d) => {
+    setAuthUser(d.user)
+    return d.user
+  }),
   verifyEsToken: () => fetchJson<{ user: AuthUser; access_token: string }>("/api/auth/verify-es-token", {
     method: "POST",
   }),
@@ -93,11 +107,12 @@ export const api = {
 
   async tts(req: NativeTTSRequest, signal?: AbortSignal): Promise<{ blob: Blob; contentType: string }> {
     const r = await fetch(BASE + "/v1/tts", {
+      ...withAuth({
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ response_format: "wav", ...req }),
       signal,
+      }),
     })
     if (!r.ok) {
       let detail = await r.text().catch(() => "")
