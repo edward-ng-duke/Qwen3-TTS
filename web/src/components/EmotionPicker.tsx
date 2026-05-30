@@ -35,7 +35,7 @@ export function EmotionPicker({ value, onChange }: Props) {
             transition={spring}
             aria-pressed={selected}
             className={cn(
-              "relative inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[13px] select-none",
+              "relative inline-flex flex-1 sm:flex-none justify-center items-center gap-1.5 min-h-10 sm:min-h-8 sm:h-8 px-3 rounded-full text-[13px] select-none",
               "transition-colors",
               selected
                 ? "text-white"

@@ -62,7 +62,7 @@ function TabBar({ tab, setTab }: { tab: PanelTab; setTab: (t: PanelTab) => void 
             type="button"
             onClick={() => setTab(t.value)}
             className={cn(
-              "relative h-9 text-[12.5px] rounded-full select-none transition-colors",
+              "relative min-h-11 sm:min-h-9 sm:h-9 text-[12.5px] rounded-full select-none transition-colors",
               active
                 ? "text-white font-medium"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
@@ -139,7 +139,7 @@ function PanelInner({
     ? { duration: 0.15 }
     : { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const }
   return (
-    <div className="h-full flex flex-col gap-3 p-3">
+    <div className="h-full min-h-0 flex flex-col gap-3 p-3 safe-bottom">
       <TabBar tab={tab} setTab={setTab} />
       <ScrollArea className="flex-1 min-h-0 -mx-1">
         <div className="px-1 pb-2">
@@ -202,7 +202,7 @@ export function SidePanel(props: Props) {
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.94 }}
             transition={mobileSpring}
-            className="md:hidden fixed bottom-5 right-5 z-30 inline-flex items-center justify-center px-5 h-12 rounded-full text-white text-[14px] font-medium"
+            className="md:hidden fixed bottom-[calc(1rem+var(--safe-bottom))] right-[max(1rem,var(--safe-right))] z-30 inline-flex max-w-[calc(100vw-2rem)] items-center justify-center px-5 min-h-12 rounded-full text-white text-[14px] font-medium"
             style={{
               background: "var(--brand-gradient)",
               boxShadow: "0 12px 32px var(--brand-glow)",
@@ -212,7 +212,7 @@ export function SidePanel(props: Props) {
             {TABS.find((t) => t.value === panelTab)?.label}
           </motion.button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="!h-[85vh] max-h-[85vh] p-0">
+        <SheetContent side="bottom" className="!h-[min(88dvh,calc(100dvh-var(--safe-top)-0.75rem))] max-h-[min(88dvh,calc(100dvh-var(--safe-top)-0.75rem))] rounded-t-[var(--radius-island)] p-0 overflow-hidden">
           <SheetTitle className="sr-only">控制面板</SheetTitle>
           <SheetDescription className="sr-only">
             切换音色库、历史记录和高级参数。

@@ -42,6 +42,45 @@ CUSTOM_CSS = """
     border: 1px solid var(--border-color-primary);
     cursor: pointer;
 }
+
+@media (max-width: 768px) {
+    .gradio-container {
+        max-width: 100% !important;
+        padding-inline: 12px !important;
+    }
+    .gradio-container .gr-row {
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+    .speaker-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .speaker-grid label {
+        min-height: 44px;
+        padding: 12px;
+    }
+    .speaker-badges,
+    .emotion-row {
+        gap: 6px;
+    }
+    .speaker-badge,
+    .emotion-row label {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+    }
+    .emotion-row label {
+        min-height: 44px;
+        padding: 8px 12px;
+    }
+    .gradio-container input,
+    .gradio-container textarea,
+    .gradio-container button,
+    .gradio-container select {
+        font-size: 16px !important;
+    }
+}
 """
 
 

@@ -57,6 +57,12 @@
   --brand-gradient: linear-gradient(135deg, oklch(0.65 0.22 280), oklch(0.7 0.2 220));
   --brand-glow: oklch(0.6 0.22 280 / 0.4);
 
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --mobile-page-gutter: clamp(0.75rem, 4vw, 1.25rem);
+
   --radius-pill: 999px;
   --radius-card: 22px;
   --radius-island: 28px;
@@ -219,8 +225,12 @@
 }
 
 @layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
   html, body, #root {
-    height: 100%;
+    min-height: 100%;
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);
@@ -230,12 +240,84 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  html {
+    min-width: 320px;
+    overflow-x: hidden;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overscroll-behavior-y: none;
+  }
+
+  #root {
+    min-height: 100dvh;
+    isolation: isolate;
+  }
+
   * { border-color: var(--border); }
+
+  button, a, input, textarea, select, [role="button"] {
+    touch-action: manipulation;
+  }
+
+  button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  img, svg, canvas, video {
+    max-width: 100%;
+  }
 
   button:focus-visible, input:focus-visible, textarea:focus-visible,
   [role="button"]:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+
+  @media (max-width: 640px) {
+    :root {
+      --radius-card: 18px;
+      --radius-island: 22px;
+      --radius-input: 16px;
+      --radius-chip: 13px;
+    }
+
+    input, textarea, select {
+      font-size: 16px;
+    }
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: max(1rem, var(--safe-bottom));
+  }
+
+  .safe-x {
+    padding-left: max(var(--mobile-page-gutter), var(--safe-left));
+    padding-right: max(var(--mobile-page-gutter), var(--safe-right));
+  }
+}
+
+@media (max-width: 640px) {
+  [data-sonner-toaster] {
+    left: max(0.5rem, var(--safe-left)) !important;
+    right: max(0.5rem, var(--safe-right)) !important;
+    width: auto !important;
+  }
+
+  [data-sonner-toaster][data-position^="top"] {
+    top: max(0.75rem, var(--safe-top)) !important;
+  }
+
+  .cn-toast {
+    width: 100% !important;
+    max-width: calc(100vw - 1rem - var(--safe-left) - var(--safe-right)) !important;
   }
 }
 

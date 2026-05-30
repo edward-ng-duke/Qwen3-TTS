@@ -43,25 +43,25 @@ export function Topbar() {
       initial={{ y: -24, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={spring}
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-40 px-3 w-[min(960px,calc(100%-1.5rem))]"
+      className="fixed top-[calc(0.75rem+var(--safe-top))] sm:top-4 left-1/2 -translate-x-1/2 z-40 px-2 sm:px-3 w-[min(960px,calc(100%-1rem))] sm:w-[min(960px,calc(100%-1.5rem))]"
     >
       <GlassCard
         variant="strong"
-        className="rounded-[var(--radius-pill)] px-3 py-1.5 flex items-center gap-2"
+        className="min-w-0 rounded-[var(--radius-pill)] px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 sm:gap-2"
       >
         <span
           aria-hidden
-          className="inline-flex w-7 h-7 items-center justify-center rounded-full text-white text-sm font-semibold"
+          className="inline-flex w-8 h-8 sm:w-7 sm:h-7 shrink-0 items-center justify-center rounded-full text-white text-sm font-semibold"
           style={{ background: "var(--brand-gradient)", boxShadow: "0 4px 12px var(--brand-glow)" }}
         >
           微
         </span>
-        <div className="flex items-baseline gap-1.5 select-none">
-          <span className="font-semibold tracking-tight text-[15px] text-[var(--text-primary)]">
+        <div className="min-w-0 flex items-baseline gap-1.5 max-[360px]:gap-1 select-none">
+          <span className="shrink-0 font-semibold tracking-tight text-[15px] text-[var(--text-primary)]">
             {T.brand.name}
           </span>
-          <span className="text-[var(--text-tertiary)]" aria-hidden>·</span>
-          <span className="text-[13px] text-[var(--text-secondary)]">
+          <span className="hidden min-[380px]:inline text-[var(--text-tertiary)]" aria-hidden>·</span>
+          <span className="hidden min-[380px]:inline text-[13px] text-[var(--text-secondary)] truncate">
             {T.brand.subtitle}
           </span>
         </div>
@@ -69,7 +69,7 @@ export function Topbar() {
         <motion.span
           layout
           className={cn(
-            "ml-1 text-[11px] px-2 py-0.5 rounded-full inline-flex items-center gap-1.5",
+            "shrink-0 ml-0 sm:ml-1 text-[11px] px-2 max-[360px]:px-1.5 py-0.5 rounded-full inline-flex items-center gap-1.5",
           )}
           style={{
             background: ready
@@ -90,7 +90,7 @@ export function Topbar() {
           {statusLabel(health?.status, ready)}
         </motion.span>
 
-        <div className="flex-1" />
+        <div className="flex-1 min-w-1" />
 
         {auth.enabled && auth.user ? (
           <div className="hidden md:flex items-center gap-1.5 rounded-full px-2 py-1 text-[12px] text-[var(--text-secondary)] bg-[var(--glass-thin-bg)] border border-[var(--glass-thin-border)] max-w-[180px]">
@@ -117,7 +117,7 @@ export function Topbar() {
           transition={spring}
           aria-label={T.a11y.toggleTheme}
           onClick={onToggleTheme}
-          className="inline-flex items-center justify-center w-8 h-8 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-thin-bg)] transition-colors"
+          className="inline-flex shrink-0 items-center justify-center w-11 h-11 sm:w-8 sm:h-8 -my-1.5 sm:my-0 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-thin-bg)] transition-colors"
         >
           {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
         </motion.button>
@@ -130,7 +130,7 @@ export function Topbar() {
             transition={spring}
             aria-label="退出登录"
             onClick={auth.logout}
-            className="inline-flex items-center justify-center w-8 h-8 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-thin-bg)] transition-colors"
+            className="inline-flex shrink-0 items-center justify-center w-11 h-11 sm:w-8 sm:h-8 -my-1.5 sm:my-0 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-thin-bg)] transition-colors"
           >
             <LogOut className="size-4" />
           </motion.button>
@@ -143,7 +143,7 @@ export function Topbar() {
           transition={spring}
           aria-label={panelOpen ? T.topbar.sidePanelClose : T.topbar.sidePanelOpen}
           onClick={togglePanel}
-          className="inline-flex items-center justify-center w-8 h-8 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-thin-bg)] transition-colors"
+          className="inline-flex shrink-0 items-center justify-center w-11 h-11 sm:w-8 sm:h-8 -my-1.5 sm:my-0 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-thin-bg)] transition-colors"
         >
           {panelOpen ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
         </motion.button>

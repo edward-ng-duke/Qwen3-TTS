@@ -29,9 +29,9 @@ function authBackendMissingMessage(error: unknown): string {
 
 function AuthLoading() {
   return (
-    <div className="h-screen grid place-items-center text-[var(--text-primary)]">
+    <div className="min-h-dvh grid place-items-center px-4 text-[var(--text-primary)]">
       <AuroraBackground />
-      <GlassCard variant="strong" className="relative z-10 px-5 py-4 rounded-[var(--radius-island)] flex items-center gap-3">
+      <GlassCard variant="strong" className="relative z-10 max-w-full px-5 py-4 rounded-[var(--radius-island)] flex items-center gap-3">
         <Loader2 className="size-4 animate-spin text-[var(--brand)]" />
         <span className="text-sm text-[var(--text-secondary)]">正在确认身份</span>
       </GlassCard>
@@ -76,7 +76,7 @@ function LoginPage({
   }
 
   return (
-    <div className="min-h-screen grid place-items-center px-4 py-10 text-[var(--text-primary)]">
+    <div className="min-h-dvh grid place-items-center px-4 py-[calc(2rem+var(--safe-top))] pb-[calc(2rem+var(--safe-bottom))] text-[var(--text-primary)]">
       <AuroraBackground />
       <motion.div
         initial={{ y: 18, opacity: 0 }}
@@ -84,7 +84,7 @@ function LoginPage({
         transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 w-[min(430px,100%)]"
       >
-        <GlassCard variant="strong" className="rounded-[var(--radius-island)] p-6 md:p-7">
+        <GlassCard variant="strong" className="rounded-[var(--radius-island)] p-5 sm:p-6 md:p-7">
           <div className="flex items-start gap-3">
             <span
               aria-hidden
@@ -109,7 +109,7 @@ function LoginPage({
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
                 required
-                className="w-full rounded-[var(--radius-input)] px-3.5 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+                className="w-full min-h-11 rounded-[var(--radius-input)] px-3.5 py-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                 style={{
                   background: "var(--input-well-bg)",
                   border: "1px solid var(--input-well-border)",
@@ -126,7 +126,7 @@ function LoginPage({
                 type="password"
                 autoComplete="current-password"
                 required
-                className="w-full rounded-[var(--radius-input)] px-3.5 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+                className="w-full min-h-11 rounded-[var(--radius-input)] px-3.5 py-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                 style={{
                   background: "var(--input-well-bg)",
                   border: "1px solid var(--input-well-border)",
@@ -135,18 +135,18 @@ function LoginPage({
               />
             </label>
 
-            <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--text-secondary)]">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(event) => setRememberMe(event.target.checked)}
-                className="size-4 rounded border-[var(--input-well-border)] accent-[var(--brand)]"
+                className="size-5 rounded border-[var(--input-well-border)] accent-[var(--brand)]"
               />
               保持登录状态
             </label>
 
             {message ? (
-              <p className="rounded-[var(--radius-chip)] border border-[oklch(0.65_0.22_25_/_0.25)] bg-[oklch(0.65_0.22_25_/_0.08)] px-3 py-2 text-sm text-[var(--danger)]">
+              <p className="break-words rounded-[var(--radius-chip)] border border-[oklch(0.65_0.22_25_/_0.25)] bg-[oklch(0.65_0.22_25_/_0.08)] px-3 py-2 text-sm text-[var(--danger)]">
                 {message}
               </p>
             ) : null}

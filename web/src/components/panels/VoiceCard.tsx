@@ -62,7 +62,7 @@ function PlayButton({ playing, onClick, reduce }: PlayButtonProps) {
       transition={spring}
       onClick={onClick}
       aria-label={playing ? T.voiceCard.pausePreview : T.voiceCard.preview}
-      className="relative ml-auto inline-flex items-center justify-center w-7 h-7 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+      className="relative ml-auto -mr-2 sm:mr-0 inline-flex items-center justify-center w-11 h-11 sm:w-7 sm:h-7 rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
     >
       <motion.span
         aria-hidden
@@ -286,8 +286,8 @@ export function VoiceCard({ voice, selected, onSelect }: Props) {
         />
       )}
 
-      <div className="relative flex items-center gap-2">
-        <span className="font-medium text-[14px] text-[var(--text-primary)]">
+      <div className="relative flex min-w-0 items-center gap-2">
+        <span className="min-w-0 flex-1 truncate font-medium text-[14px] text-[var(--text-primary)]">
           {voiceName(voice)}
         </span>
         <AnimatePresence>
@@ -323,7 +323,7 @@ export function VoiceCard({ voice, selected, onSelect }: Props) {
       </div>
 
       {voiceDescription(voice) && (
-        <p className="relative mt-1.5 text-[12px] text-[var(--text-secondary)] leading-snug">
+        <p className="relative mt-1.5 min-w-0 break-words text-[12px] text-[var(--text-secondary)] leading-snug">
           {voiceDescription(voice)}
         </p>
       )}

@@ -14,8 +14,8 @@ interface RowProps {
 function Row({ label, hint, value, onChange, min, max, step }: RowProps) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-baseline justify-between text-[12px]">
-        <span className="text-[var(--text-secondary)]">{label}</span>
+      <div className="flex min-w-0 items-baseline justify-between gap-3 text-[12px]">
+        <span className="min-w-0 break-words text-[var(--text-secondary)]">{label}</span>
         <span className="tabular-nums text-[var(--text-primary)] font-medium">
           {value.toFixed(step < 1 ? 2 : 0)}
         </span>
@@ -80,7 +80,7 @@ export function Advanced() {
                min={0.1} max={1.0} step={0.05} />
         </div>
       </div>
-      <Button variant="outline" size="sm" onClick={reset} className="w-full">
+      <Button variant="outline" size="sm" onClick={reset} className="w-full min-h-11 sm:min-h-9">
         {T.sidePanel.advanced.reset}
       </Button>
     </div>

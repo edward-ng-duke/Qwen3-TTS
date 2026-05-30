@@ -14,7 +14,7 @@ export function ResultsStream() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="max-w-[880px] mx-auto rounded-[var(--radius-card)] p-10 text-center"
+        className="max-w-[880px] mx-auto rounded-[var(--radius-card)] p-6 sm:p-10 text-center"
         style={{
           background: "var(--glass-thin-bg)",
           backdropFilter: "blur(var(--glass-thin-blur))",
@@ -22,10 +22,10 @@ export function ResultsStream() {
           border: "1.5px dashed var(--glass-regular-border)",
         }}
       >
-        <p className="text-[14px] text-[var(--text-secondary)]">
+        <p className="break-words text-[14px] text-[var(--text-secondary)]">
           {T.results.empty}
         </p>
-        <p className="text-[12px] mt-1.5 text-[var(--text-tertiary)]">
+        <p className="break-words text-[12px] mt-1.5 text-[var(--text-tertiary)]">
           在上方输入文本后点击「{T.composer.submit}」。
         </p>
       </motion.div>
