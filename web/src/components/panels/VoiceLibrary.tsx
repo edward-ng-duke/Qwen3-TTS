@@ -39,12 +39,12 @@ export function VoiceLibrary() {
 
   if (isLoading) {
     return (
-      <p className="text-[13px] text-[var(--text-secondary)]">加载音色中…</p>
+      <p className="break-words text-[13px] text-[var(--text-secondary)]">加载音色中…</p>
     )
   }
   if (error) {
     return (
-      <p className="text-[13px] text-[oklch(0.65_0.22_25)]">
+      <p className="break-words text-[13px] text-[oklch(0.65_0.22_25)]">
         音色加载失败：{(error as Error).message}
       </p>
     )

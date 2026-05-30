@@ -37,7 +37,7 @@ function ActionButton({
       whileTap={{ scale: 0.94 }}
       transition={spring}
       aria-label={label}
-      className="inline-flex items-center gap-1 h-8 px-3 rounded-full text-[12.5px] transition-colors"
+      className="inline-flex min-h-11 sm:min-h-8 sm:h-8 items-center gap-1 px-3.5 sm:px-3 rounded-full text-[12.5px] transition-colors"
       style={{
         color: danger ? "oklch(0.65 0.22 25)" : "var(--text-secondary)",
         background: "var(--glass-thin-bg)",
@@ -147,16 +147,16 @@ JSON`
   return (
     <GlassCard
       variant="regular"
-      className="max-w-[880px] mx-auto rounded-[var(--radius-card)] p-5 space-y-4"
+      className="max-w-[880px] mx-auto rounded-[var(--radius-card)] p-4 sm:p-5 space-y-4"
     >
-      <header className="flex items-center gap-2 text-[12px] text-[var(--text-secondary)] flex-wrap">
+      <header className="min-w-0 flex items-center gap-2 text-[12px] text-[var(--text-secondary)] flex-wrap">
         <span className="text-[var(--text-primary)] font-medium">{voiceNameById(item.speakerId)}</span>
         <span className="text-[var(--text-tertiary)]">·</span>
         <span>{formatLanguage(item.language)}</span>
         <span className="text-[var(--text-tertiary)]">·</span>
         {item.emotion === "Custom" && item.customInstruct?.trim() ? (
           <span
-            className="max-w-[420px] truncate"
+            className="min-w-0 max-w-full sm:max-w-[420px] truncate"
             title={item.customInstruct.trim()}
           >
             {EMOTION_EMOJI.Custom} {truncate(item.customInstruct.trim(), 40)}
@@ -168,96 +168,99 @@ JSON`
         )}
         <span className="text-[var(--text-tertiary)]">·</span>
         <span className="tabular-nums">{(item.generationMs / 1000).toFixed(2)} 秒</span>
-        <span className="ml-auto text-[var(--text-tertiary)]">
+        <span className="ml-auto max-[430px]:ml-0 text-[var(--text-tertiary)]">
           {formatRelativeTime(item.createdAt)}
         </span>
       </header>
 
       <p
-        className="text-[14px] leading-relaxed text-[var(--text-primary)] cursor-pointer"
+        className="min-w-0 break-words text-[14px] leading-relaxed text-[var(--text-primary)] cursor-pointer"
         onClick={() => setExpanded((v) => !v)}
       >
         {expanded ? item.text : truncate(item.text, 120)}
       </p>
 
       <div
-        className="flex items-center gap-3 rounded-2xl pl-2 pr-4 py-2"
+        className="flex max-[430px]:flex-col items-stretch gap-2 rounded-2xl p-2 sm:pl-2 sm:pr-4 sm:py-2"
         style={{
           background: "color-mix(in oklab, var(--text-primary) 4%, transparent)",
           border: "1px solid color-mix(in oklab, var(--text-primary) 6%, transparent)",
         }}
       >
-        <motion.button
-          type="button"
-          onClick={toggle}
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.94 }}
-          transition={spring}
-          aria-label={playing ? T.results.pause : T.results.play}
-          className="inline-flex items-center justify-center w-10 h-10 rounded-full text-white shrink-0"
-          style={{
-            background: "var(--brand-gradient)",
-            boxShadow: "0 6px 18px var(--brand-glow)",
-          }}
-        >
-          {playing ? <Pause className="size-4" /> : <Play className="size-4 ml-0.5" />}
-        </motion.button>
-
-        <span
-          className="text-[11.5px] text-[var(--text-secondary)] tabular-nums shrink-0 w-8 text-right"
-          aria-hidden
-        >
-          {formatSeconds(currentTime)}
-        </span>
-
-        <div
-          ref={trackRef}
-          onClick={seekTo}
-          onMouseEnter={() => setSeekHover(true)}
-          onMouseLeave={() => setSeekHover(false)}
-          aria-label={T.a11y.seekProgress}
-          role="slider"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(progress * 100)}
-          className="group relative flex-1 cursor-pointer py-3"
-        >
-          <div
-            className="h-1.5 rounded-full overflow-hidden transition-[height] group-hover:h-2"
+        <div className="flex w-full min-w-0 items-center gap-2 sm:gap-3">
+          <motion.button
+            type="button"
+            onClick={toggle}
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.94 }}
+            transition={spring}
+            aria-label={playing ? T.results.pause : T.results.play}
+            className="inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 rounded-full text-white shrink-0"
             style={{
-              background: "color-mix(in oklab, var(--text-primary) 14%, transparent)",
+              background: "var(--brand-gradient)",
+              boxShadow: "0 6px 18px var(--brand-glow)",
             }}
           >
-            <motion.div
-              className="h-full rounded-full"
-              style={{
-                background: "var(--brand-gradient)",
-                width: `${progress * 100}%`,
-                boxShadow: playing ? "0 0 12px var(--brand-glow)" : "none",
-              }}
-              animate={{ width: `${progress * 100}%` }}
-              transition={{ duration: 0.12, ease: "linear" }}
-            />
-          </div>
-          {(playing || seekHover || progress > 0) && (
-            <motion.span
-              aria-hidden
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white"
-              style={{
-                left: `${progress * 100}%`,
-                width: seekHover ? 14 : 12,
-                height: seekHover ? 14 : 12,
-                border: "2px solid oklch(0.65 0.22 280)",
-                boxShadow: "0 2px 10px var(--brand-glow)",
-              }}
-              transition={spring}
-            />
-          )}
-        </div>
+            {playing ? <Pause className="size-4" /> : <Play className="size-4 ml-0.5" />}
+          </motion.button>
 
-        <span className="text-[11.5px] text-[var(--text-tertiary)] tabular-nums shrink-0 w-8">
-          {formatSeconds(item.audioDurationSec)}
-        </span>
+          <span
+            className="text-[11.5px] text-[var(--text-secondary)] tabular-nums shrink-0 w-8 text-right"
+            aria-hidden
+          >
+            {formatSeconds(currentTime)}
+          </span>
+
+          <div
+            ref={trackRef}
+            onClick={seekTo}
+            onMouseEnter={() => setSeekHover(true)}
+            onMouseLeave={() => setSeekHover(false)}
+            aria-label={T.a11y.seekProgress}
+            role="slider"
+            tabIndex={0}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress * 100)}
+            className="group relative min-w-0 flex-1 cursor-pointer py-4 sm:py-3"
+          >
+            <div
+              className="h-1.5 rounded-full overflow-hidden transition-[height] group-hover:h-2"
+              style={{
+                background: "color-mix(in oklab, var(--text-primary) 14%, transparent)",
+              }}
+            >
+              <motion.div
+                className="h-full rounded-full"
+                style={{
+                  background: "var(--brand-gradient)",
+                  width: `${progress * 100}%`,
+                  boxShadow: playing ? "0 0 12px var(--brand-glow)" : "none",
+                }}
+                animate={{ width: `${progress * 100}%` }}
+                transition={{ duration: 0.12, ease: "linear" }}
+              />
+            </div>
+            {(playing || seekHover || progress > 0) && (
+              <motion.span
+                aria-hidden
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white"
+                style={{
+                  left: `${progress * 100}%`,
+                  width: seekHover ? 14 : 12,
+                  height: seekHover ? 14 : 12,
+                  border: "2px solid oklch(0.65 0.22 280)",
+                  boxShadow: "0 2px 10px var(--brand-glow)",
+                }}
+                transition={spring}
+              />
+            )}
+          </div>
+
+          <span className="text-[11.5px] text-[var(--text-tertiary)] tabular-nums shrink-0 w-8">
+            {formatSeconds(item.audioDurationSec)}
+          </span>
+        </div>
 
         <audio
           ref={audioRef}
@@ -272,7 +275,7 @@ JSON`
         />
       </div>
 
-      <div className="flex items-center gap-1.5 flex-wrap">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-1.5 flex-wrap">
         <ActionButton onClick={onDownload} label={T.results.download}>
           <Download className="size-3.5" /> {T.results.download}
         </ActionButton>
@@ -282,7 +285,7 @@ JSON`
         <ActionButton onClick={onCopyCurl} label={T.results.copyApi}>
           <Copy className="size-3.5" /> {T.results.copyApi}
         </ActionButton>
-        <div className="flex-1" />
+        <div className="hidden sm:block flex-1" />
         {onDelete && (
           <ActionButton onClick={onDelete} label={T.results.delete} danger>
             <Trash2 className="size-3.5" />

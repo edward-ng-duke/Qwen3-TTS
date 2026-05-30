@@ -24,7 +24,7 @@ export function VoicePill({ voice, onClick, className }: Props) {
       whileTap={{ scale: 0.97 }}
       transition={spring}
       className={cn(
-        "inline-flex items-center gap-2 h-9 px-3 rounded-full text-[13px] select-none",
+        "inline-flex min-w-0 items-center gap-2 min-h-11 sm:min-h-9 sm:h-9 px-3 rounded-full text-[13px] select-none",
         "text-[var(--text-primary)]",
         className,
       )}
@@ -44,11 +44,11 @@ export function VoicePill({ voice, onClick, className }: Props) {
         className="size-3.5"
         style={{ color: selected ? "var(--brand)" : "var(--text-tertiary)" }}
       />
-      <span className="font-medium">
+      <span className="min-w-0 truncate font-medium">
         {voice ? voiceName(voice) : T.composer.pickVoice}
       </span>
       {voice && (
-        <span className="text-[12px] text-[var(--text-tertiary)]">
+        <span className="hidden min-[360px]:inline shrink-0 text-[12px] text-[var(--text-tertiary)]">
           · {formatLanguage(voice.language)}
         </span>
       )}

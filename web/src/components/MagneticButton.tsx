@@ -82,7 +82,7 @@ export const MagneticButton = forwardRef<HTMLButtonElement, Props>(
           cursor: disabled ? 'not-allowed' : 'pointer',
         }}
         className={cn(
-          'inline-flex items-center justify-center gap-2 px-6 h-11 font-medium select-none',
+          'inline-flex min-h-11 min-w-11 max-w-full items-center justify-center gap-2 px-6 h-11 font-medium select-none whitespace-nowrap',
           fullWidth && 'w-full',
           className,
         )}

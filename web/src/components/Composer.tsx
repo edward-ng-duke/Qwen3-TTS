@@ -48,10 +48,7 @@ export function Composer() {
 
   const [elapsedMs, setElapsedMs] = useState(0)
   useEffect(() => {
-    if (!gen.isPending) {
-      setElapsedMs(0)
-      return
-    }
+    if (!gen.isPending) return
     const t0 = performance.now()
     const id = window.setInterval(() => {
       setElapsedMs(performance.now() - t0)
@@ -70,6 +67,7 @@ export function Composer() {
 
   const submit = () => {
     if (!composer.text.trim()) return
+    setElapsedMs(0)
     gen.mutate({
       text: composer.text.trim(),
       speakerId: composer.speakerId,
@@ -90,7 +88,7 @@ export function Composer() {
     >
       <GlassCard
         variant="strong"
-        className="rounded-[var(--radius-island)] p-5 md:p-7 space-y-4"
+        className="rounded-[var(--radius-island)] p-3 sm:p-5 md:p-7 space-y-3 sm:space-y-4"
         style={{ boxShadow: "var(--shadow-elevate)" }}
       >
         <div
@@ -100,7 +98,7 @@ export function Composer() {
             value={composer.text}
             onChange={(e) => composer.setText(e.target.value)}
             placeholder={T.composer.placeholder}
-            className="min-h-[200px] resize-y rounded-[var(--radius-input)] text-[15px] leading-relaxed border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[var(--text-secondary)]"
+            className="min-h-[150px] sm:min-h-[200px] resize-y rounded-[var(--radius-input)] text-base sm:text-[15px] leading-relaxed border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[var(--text-secondary)]"
             style={{
               background: "var(--input-well-bg)",
               border: "1px solid var(--input-well-border)",
@@ -115,10 +113,10 @@ export function Composer() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
           <Select value={composer.language} onValueChange={composer.setLanguage}>
             <SelectTrigger
-              className="h-9 w-32 rounded-full border-0 px-3 text-[13px]"
+              className="h-11 sm:h-9 w-full sm:w-32 rounded-full border-0 px-3 text-base sm:text-[13px]"
               style={{
                 background: "var(--glass-thin-bg)",
                 backdropFilter: "blur(var(--glass-thin-blur))",
@@ -137,8 +135,9 @@ export function Composer() {
           <VoicePill
             voice={currentVoice}
             onClick={() => { setPanelTab("voices"); setPanelOpen(true) }}
+            className="w-full sm:w-auto justify-start sm:justify-center"
           />
-          <div className="ml-auto text-[12px] text-[var(--text-tertiary)] tabular-nums">
+          <div className="w-full sm:w-auto sm:ml-auto text-right text-[12px] text-[var(--text-tertiary)] tabular-nums">
             {composer.text.length} 字
           </div>
         </div>
@@ -154,7 +153,7 @@ export function Composer() {
               value={composer.customInstruct}
               onChange={(e) => composer.setCustomInstruct(e.target.value)}
               placeholder={T.emotions.customPlaceholder}
-              className="min-h-[60px] rounded-[var(--radius-input)] text-[14px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[var(--text-secondary)]"
+              className="min-h-[72px] sm:min-h-[60px] rounded-[var(--radius-input)] text-base sm:text-[14px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[var(--text-secondary)]"
               style={{
                 background: "var(--input-well-bg)",
                 border: "1px solid var(--input-well-border)",
@@ -171,7 +170,7 @@ export function Composer() {
                   key={s}
                   type="button"
                   onClick={() => composer.setCustomInstruct(s)}
-                  className="px-2.5 py-1 rounded-full border border-[var(--input-well-border)] bg-[var(--input-well-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
+                  className="min-h-10 sm:min-h-0 px-2.5 py-1 rounded-full border border-[var(--input-well-border)] bg-[var(--input-well-bg)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors"
                 >
                   {s}
                 </button>
@@ -180,10 +179,12 @@ export function Composer() {
           </div>
         )}
 
-        <div className="flex items-center gap-3 pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 pt-1">
           <MagneticButton
             onClick={submit}
             disabled={!composer.text.trim() || gen.isPending}
+            fullWidth
+            className="sm:w-auto"
           >
             {gen.isPending ? (
               <>
@@ -199,6 +200,12 @@ export function Composer() {
           </MagneticButton>
           <span
             className="text-[12px] text-[var(--text-tertiary)] hidden sm:inline tabular-nums"
+            aria-live={gen.isPending ? "polite" : undefined}
+          >
+            {hintText}
+          </span>
+          <span
+            className="text-center text-[12px] text-[var(--text-tertiary)] sm:hidden tabular-nums"
             aria-live={gen.isPending ? "polite" : undefined}
           >
             {hintText}
