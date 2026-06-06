@@ -40,3 +40,6 @@ followups.md
 # Ad-hoc UI iteration screenshots at repo root.
 /empty.png
 /player-after*.png
+
+# Agent-generated UI/UX review reports (multi-MB HTML; not project source).
+/report/
