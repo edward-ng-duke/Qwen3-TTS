@@ -27,6 +27,23 @@ NO_CACHE_FLAG := $(if $(NO_CACHE),--no-cache,)
 # Local dev usually doesn't have flash-attn installed in the host venv. Override
 # with `LOCAL_ATTN_IMPL=flash_attention_2 make dev` once you've pip-installed it.
 LOCAL_ATTN_IMPL ?= sdpa
+
+# --- Remote deploy (make deploy-remote-94) --------------------------------
+# Package the already-built $(IMAGE) into a compressed, self-contained bundle,
+# rsync it to a remote host, then load + `compose up` there (never rebuilds).
+REMOTE_HOST ?= weiqu@10.0.0.94
+REMOTE_DIR  ?= ~/qwen3-tts-deploy
+# Physical GPU id to pin on the remote (rewrites compose `count: all` →
+# `device_ids: ['$(REMOTE_GPU)']`). Use REMOTE_GPU=all to expose every card.
+REMOTE_GPU  ?= 0
+BUNDLE_DIR  ?= deploy-bundle
+IMAGE_TAR   ?= qwen3-tts-local.tar.zst
+ZSTD_LEVEL  ?= 19
+# REPACK=1 forces re-compressing the image even when it hasn't changed.
+REPACK      ?=
+# Derive bare host (drop user@) for the final URL hint.
+REMOTE_ADDR := $(lastword $(subst @, ,$(REMOTE_HOST)))
+
 AUTH_TRUE_VALUES := true 1 yes on
 AUTH_FALSE_VALUES := false 0 no off
 AUTH_ON := $(filter $(AUTH_TRUE_VALUES),$(AUTH_ENABLED))
@@ -35,7 +52,7 @@ AUTH_AUTO_SIGNAL := $(or $(MONGO_URL),$(filter $(AUTH_TRUE_VALUES),$(MONGO_ENABL
 VITE_AUTH_REQUIRED ?= $(if $(AUTH_OFF),false,$(if $(or $(AUTH_ON),$(AUTH_AUTO_SIGNAL)),true,false))
 export VITE_AUTH_REQUIRED
 
-.PHONY: help download build up down restart logs ps health deploy redeploy test clean nuke web-dev web-build dev api-dev wait-ready stop stop-dev free-dev-port free-deploy-port jwt-secret-check
+.PHONY: help download build up down restart logs ps health deploy redeploy test clean nuke web-dev web-build dev api-dev wait-ready stop stop-dev free-dev-port free-deploy-port jwt-secret-check deploy-remote-94 remote-bundle remote-push
 
 help:
 	@echo "Qwen3-TTS — make targets:"
@@ -50,6 +67,7 @@ help:
 	@echo "  make health     curl /v1/health"
 	@echo "  make deploy     download (if needed) + build + up + wait for ready  (NO_CACHE=1 to bust cache)"
 	@echo "  make redeploy   down + build + up + wait for ready (skips download)  (NO_CACHE=1 to bust cache)"
+	@echo "  make deploy-remote-94  package(zstd) → rsync → remote load+up on $(REMOTE_HOST) (GPU=$(REMOTE_GPU); REPACK=1 to re-pack)"
 	@echo "  make test       Run pytest"
 	@echo "  make dev        Local backend on :$(DEV_PORT) + Vite on 0.0.0.0:$(DEV_WEB_PORT) (one-shot, trap-cleans)"
 	@echo "  make api-dev    Local backend (uvicorn) on 0.0.0.0:$(DEV_PORT) — no docker"
@@ -200,3 +218,46 @@ clean: down
 
 nuke: clean
 	-docker volume rm qwen3-tts_qwen-tts-previews
+
+# --- Remote deploy pipeline ----------------------------------------------
+# remote-bundle: build $(BUNDLE_DIR)/ — compressed image (zstd -$(ZSTD_LEVEL)
+#   --long=31, only re-packed when the image changed or REPACK=1) + .env + jwt +
+#   GPU-pinned compose + loader script. remote-push: rsync it. deploy-remote-94:
+#   the whole pipeline + remote `load-and-run.sh` (load + compose up --no-build +
+#   wait for model_ready). Override REMOTE_HOST / REMOTE_DIR / REMOTE_GPU as needed.
+remote-bundle:
+	@command -v zstd  >/dev/null 2>&1 || { echo "[make] zstd not installed locally"; exit 1; }
+	@docker image inspect $(IMAGE) >/dev/null 2>&1 || { echo "[make] image $(IMAGE) missing — run 'make build' (or 'make deploy') first"; exit 1; }
+	@mkdir -p $(BUNDLE_DIR)/auth_doc
+	@img_id=$$(docker image inspect $(IMAGE) --format '{{.Id}}'); \
+	if [ "$(REPACK)" != "1" ] && [ -f "$(BUNDLE_DIR)/$(IMAGE_TAR)" ] && [ "$$(cat $(BUNDLE_DIR)/$(IMAGE_TAR).imageid 2>/dev/null)" = "$$img_id" ]; then \
+		echo "[make] reuse $(BUNDLE_DIR)/$(IMAGE_TAR) (image unchanged; REPACK=1 to force re-pack)"; \
+	else \
+		echo "[make] docker save $(IMAGE) | zstd -$(ZSTD_LEVEL) --long=31 → $(BUNDLE_DIR)/$(IMAGE_TAR)  (slow, several min)"; \
+		docker save $(IMAGE) | zstd -T0 -$(ZSTD_LEVEL) --long=31 -o $(BUNDLE_DIR)/$(IMAGE_TAR); \
+		printf '%s' "$$img_id" > $(BUNDLE_DIR)/$(IMAGE_TAR).imageid; \
+		( cd $(BUNDLE_DIR) && sha256sum $(IMAGE_TAR) > $(IMAGE_TAR).sha256 ); \
+	fi
+	@cp .env $(BUNDLE_DIR)/.env
+	@cp "$(JWT_SECRET_FILE)" $(BUNDLE_DIR)/auth_doc/jwt
+	@if [ "$(REMOTE_GPU)" = "all" ]; then \
+		cp docker-compose.yml $(BUNDLE_DIR)/docker-compose.yml; \
+		echo "[make] compose: GPU = all cards"; \
+	else \
+		sed "s/^\([[:space:]]*\)count: all/\1device_ids: ['$(REMOTE_GPU)']/" docker-compose.yml > $(BUNDLE_DIR)/docker-compose.yml; \
+		echo "[make] compose: GPU pinned to device_ids: ['$(REMOTE_GPU)']"; \
+	fi
+	@cp scripts/remote-load-and-run.sh $(BUNDLE_DIR)/load-and-run.sh
+	@chmod +x $(BUNDLE_DIR)/load-and-run.sh
+	@echo "[make] bundle ready → $(BUNDLE_DIR)/"
+
+remote-push: remote-bundle
+	@command -v rsync >/dev/null 2>&1 || { echo "[make] rsync not installed locally"; exit 1; }
+	@ssh -o BatchMode=yes $(REMOTE_HOST) 'mkdir -p $(REMOTE_DIR)'
+	@echo "[make] rsync $(BUNDLE_DIR)/ → $(REMOTE_HOST):$(REMOTE_DIR)/"
+	@rsync -a --partial --info=progress2 -e "ssh -o BatchMode=yes" $(BUNDLE_DIR)/ $(REMOTE_HOST):$(REMOTE_DIR)/
+
+deploy-remote-94: remote-push
+	@echo "[make] remote load + compose up --no-build + wait on $(REMOTE_HOST)"
+	@ssh -o BatchMode=yes $(REMOTE_HOST) 'cd $(REMOTE_DIR) && PORT=$(PORT) bash load-and-run.sh'
+	@echo "[make] deploy-remote-94 complete → http://$(REMOTE_ADDR):$(PORT)/"
