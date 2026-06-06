@@ -14,11 +14,14 @@ from .voices import EMOTION_PRESETS, SPEAKER_METADATA
 
 log = logging.getLogger(__name__)
 
-# Bilingual disclaimer — copied verbatim from qwen_tts/cli/demo.py:584-589.
+# Bilingual disclaimer — same policy content as the CLI demo, collapsed by
+# default so the primary generation form remains usable on phones.
 DISCLAIMER_MD = """
-**Disclaimer (免责声明)**
-- The audio is automatically generated/synthesized by an AI model solely to demonstrate the model's capabilities; it may be inaccurate or inappropriate, does not represent the views of the developer/operator, and does not constitute professional advice. You are solely responsible for evaluating, using, distributing, or relying on this audio; to the maximum extent permitted by applicable law, the developer/operator disclaims liability for any direct, indirect, incidental, or consequential damages arising from the use of or inability to use the audio, except where liability cannot be excluded by law. Do not use this service to intentionally generate or replicate unlawful, harmful, defamatory, fraudulent, deepfake, or privacy/publicity/copyright/trademark‑infringing content; if a user prompts, supplies materials, or otherwise facilitates any illegal or infringing conduct, the user bears all legal consequences and the developer/operator is not responsible.
-- 音频由人工智能模型自动生成/合成，仅用于体验与展示模型效果，可能存在不准确或不当之处；其内容不代表开发者/运营方立场，亦不构成任何专业建议。用户应自行评估并承担使用、传播或依赖该音频所产生的一切风险与责任；在适用法律允许的最大范围内，开发者/运营方不对因使用或无法使用本音频造成的任何直接、间接、附带或后果性损失承担责任（法律另有强制规定的除外）。严禁利用本服务故意引导生成或复制违法、有害、诽谤、欺诈、深度伪造、侵犯隐私/肖像/著作权/商标等内容；如用户通过提示词、素材或其他方式实施或促成任何违法或侵权行为，相关法律后果由用户自行承担，与开发者/运营方无关。
+<details class="disclaimer-block">
+<summary><strong>Disclaimer (免责声明)</strong></summary>
+<p>The audio is automatically generated/synthesized by an AI model solely to demonstrate the model's capabilities; it may be inaccurate or inappropriate, does not represent the views of the developer/operator, and does not constitute professional advice. You are solely responsible for evaluating, using, distributing, or relying on this audio; to the maximum extent permitted by applicable law, the developer/operator disclaims liability for any direct, indirect, incidental, or consequential damages arising from the use of or inability to use the audio, except where liability cannot be excluded by law. Do not use this service to intentionally generate or replicate unlawful, harmful, defamatory, fraudulent, deepfake, or privacy/publicity/copyright/trademark-infringing content; if a user prompts, supplies materials, or otherwise facilitates any illegal or infringing conduct, the user bears all legal consequences and the developer/operator is not responsible.</p>
+<p>音频由人工智能模型自动生成/合成，仅用于体验与展示模型效果，可能存在不准确或不当之处；其内容不代表开发者/运营方立场，亦不构成任何专业建议。用户应自行评估并承担使用、传播或依赖该音频所产生的一切风险与责任；在适用法律允许的最大范围内，开发者/运营方不对因使用或无法使用本音频造成的任何直接、间接、附带或后果性损失承担责任（法律另有强制规定的除外）。严禁利用本服务故意引导生成或复制违法、有害、诽谤、欺诈、深度伪造、侵犯隐私/肖像/著作权/商标等内容；如用户通过提示词、素材或其他方式实施或促成任何违法或侵权行为，相关法律后果由用户自行承担，与开发者/运营方无关。</p>
+</details>
 """
 
 _DEFAULT_LANGUAGES = ["Auto", "Chinese", "English", "Japanese", "Korean",
@@ -78,9 +81,8 @@ def build_ui(cfg: ServeConfig) -> gr.Blocks:
     with gr.Blocks(css=CUSTOM_CSS, theme=theme, title="Qwen3-TTS") as demo:
         gr.Markdown(
             "# Qwen3-TTS\n"
-            "Polished demo for the **Qwen3-TTS-12Hz-1.7B-CustomVoice** model. "
-            "Pick a built-in voice, type any of the 10 supported languages, "
-            "and dial in emotion. API docs at [/docs](/docs)."
+            "Built-in voice picker, multilingual text input, emotion control, "
+            "and advanced sampling parameters. API docs: [/docs](/docs)."
         )
 
         with gr.Row():

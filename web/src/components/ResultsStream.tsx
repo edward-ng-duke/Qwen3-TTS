@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "motion/react"
+import { FileAudio2, Wand2 } from "lucide-react"
 import { useHistory } from "@/hooks/useHistory"
 import { ResultCard } from "./ResultCard"
 import { T } from "@/lib/i18n"
@@ -22,12 +23,31 @@ export function ResultsStream() {
           border: "1.5px dashed var(--glass-regular-border)",
         }}
       >
-        <p className="break-words text-[14px] text-[var(--text-secondary)]">
+        <span
+          aria-hidden
+          className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--brand)]"
+          style={{
+            background: "var(--glass-thin-bg)",
+            border: "1px solid var(--glass-thin-border)",
+          }}
+        >
+          <FileAudio2 className="size-5" />
+        </span>
+        <p className="break-words text-[15px] font-medium text-[var(--text-primary)]">
           {T.results.empty}
         </p>
-        <p className="break-words text-[12px] mt-1.5 text-[var(--text-tertiary)]">
-          在上方输入文本后点击「{T.composer.submit}」。
+        <p className="mx-auto mt-1.5 max-w-sm break-words text-[13px] leading-relaxed text-[var(--text-secondary)]">
+          {T.results.emptyHint}
         </p>
+        <div className="mt-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] text-[var(--text-tertiary)]"
+          style={{
+            background: "color-mix(in oklab, var(--brand) 8%, transparent)",
+            border: "1px solid color-mix(in oklab, var(--brand) 16%, transparent)",
+          }}
+        >
+          <Wand2 className="size-3.5" />
+          {T.composer.submit}
+        </div>
       </motion.div>
     )
   }

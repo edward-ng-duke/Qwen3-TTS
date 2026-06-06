@@ -1,4 +1,5 @@
 import { motion, useReducedMotion, type Variants } from "motion/react"
+import { AlertCircle, Mic2 } from "lucide-react"
 import { useVoices } from "@/hooks/useVoices"
 import { useComposerStore } from "@/stores/useComposerStore"
 import { VoiceCard } from "./VoiceCard"
@@ -39,14 +40,52 @@ export function VoiceLibrary() {
 
   if (isLoading) {
     return (
-      <p className="break-words text-[13px] text-[var(--text-secondary)]">加载音色中…</p>
+      <div className="space-y-2.5" aria-label="正在加载音色">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-24 animate-pulse rounded-[var(--radius-card)]"
+            style={{
+              background: "var(--glass-thin-bg)",
+              border: "1px solid var(--glass-thin-border)",
+            }}
+          />
+        ))}
+      </div>
     )
   }
   if (error) {
     return (
-      <p className="break-words text-[13px] text-[oklch(0.65_0.22_25)]">
-        音色加载失败：{(error as Error).message}
-      </p>
+      <div className="rounded-[var(--radius-card)] p-4"
+        style={{
+          background: "oklch(0.65 0.22 25 / 0.08)",
+          border: "1px solid oklch(0.65 0.22 25 / 0.22)",
+        }}
+      >
+        <AlertCircle className="mb-2 size-4 text-[var(--danger)]" />
+        <p className="break-words text-[13px] font-medium text-[var(--danger)]">
+          音色加载失败
+        </p>
+        <p className="mt-1 break-words text-[12px] leading-relaxed text-[var(--text-secondary)]">
+          {(error as Error).message}
+        </p>
+      </div>
+    )
+  }
+  if (voices.length === 0) {
+    return (
+      <div className="rounded-[var(--radius-card)] p-4 text-center"
+        style={{
+          background: "var(--glass-thin-bg)",
+          border: "1px dashed var(--glass-regular-border)",
+        }}
+      >
+        <Mic2 className="mx-auto mb-2 size-5 text-[var(--brand)]" />
+        <p className="text-[13px] font-medium text-[var(--text-primary)]">暂无可用音色</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+          请确认后端模型已加载并返回音色列表。
+        </p>
+      </div>
     )
   }
 

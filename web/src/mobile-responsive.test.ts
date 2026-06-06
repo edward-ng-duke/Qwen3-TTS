@@ -30,8 +30,8 @@ describe("mobile responsive implementation", () => {
     expect(topbar).toContain("max-[360px]")
     expect(sidePanel).toContain("safe-bottom")
     expect(sidePanel).toContain("max-h-[min(88dvh")
-    expect(composer).toContain("min-h-[150px]")
-    expect(composer).toContain("w-full sm:w-auto")
+    expect(composer).toContain("min-h-[120px] sm:min-h-[200px]")
+    expect(composer).toContain("grid-cols-1 gap-2 sm:grid-cols")
   })
 
   it("keeps result cards, history rows, and legacy Gradio usable on phones", () => {

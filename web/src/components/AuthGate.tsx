@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
-import { Loader2, LogIn, ShieldCheck } from "lucide-react"
+import { AlertCircle, Eye, EyeOff, Loader2, LogIn, ShieldCheck } from "lucide-react"
 import { motion } from "motion/react"
 import { toast } from "sonner"
 import { AuroraBackground } from "@/components/AuroraBackground"
@@ -22,7 +22,7 @@ function isAuthDisabled(error: unknown): boolean {
 
 function authBackendMissingMessage(error: unknown): string {
   if (error instanceof ApiError && (error.status === 404 || error.status === 405)) {
-    return "当前 4967 后端还没有认证接口；可以预览登录页，真实登录需要启动带认证的新后端。"
+    return "当前后端还没有认证接口；可以预览登录页，真实登录需要启动带认证的新后端。"
   }
   return ""
 }
@@ -53,6 +53,7 @@ function LoginPage({
   const [rememberMe, setRememberMe] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState(initialMessage ?? "")
+  const [showPassword, setShowPassword] = useState(false)
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -96,18 +97,20 @@ function LoginPage({
             <div>
               <h1 className="text-xl font-semibold tracking-tight">微趣登录</h1>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                使用现有账号继续访问工作台。
+                使用现有账号继续访问语音工作台。
               </p>
             </div>
           </div>
 
           <form onSubmit={submit} className="mt-6 space-y-4">
-            <label className="block">
+            <label className="block" htmlFor="login-username">
               <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">用户名</span>
               <input
+                id="login-username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
+                inputMode="email"
                 required
                 className="w-full min-h-11 rounded-[var(--radius-input)] px-3.5 py-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                 style={{
@@ -118,22 +121,42 @@ function LoginPage({
               />
             </label>
 
-            <label className="block">
-              <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">密码</span>
-              <input
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                type="password"
-                autoComplete="current-password"
-                required
-                className="w-full min-h-11 rounded-[var(--radius-input)] px-3.5 py-3 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+            <div className="block">
+              <label htmlFor="login-password" className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">密码</label>
+              <div className="relative">
+                <input
+                  id="login-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  className="w-full min-h-11 rounded-[var(--radius-input)] px-3.5 py-3 pr-12 text-base sm:text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+                  style={{
+                    background: "var(--input-well-bg)",
+                    border: "1px solid var(--input-well-border)",
+                    boxShadow: "var(--input-well-shadow)",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                  className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </div>
+
+            <p className="break-words rounded-[var(--radius-chip)] px-3 py-2 text-xs leading-relaxed text-[var(--text-tertiary)]"
                 style={{
-                  background: "var(--input-well-bg)",
-                  border: "1px solid var(--input-well-border)",
-                  boxShadow: "var(--input-well-shadow)",
+                  background: "var(--glass-thin-bg)",
+                  border: "1px solid var(--glass-thin-border)",
                 }}
-              />
-            </label>
+              >
+              如当前后端未启用认证，可直接返回工作台预览 UI；真实登录需要认证接口可用。
+            </p>
 
             <label className="flex min-h-11 items-center gap-2 text-sm text-[var(--text-secondary)]">
               <input
@@ -146,9 +169,10 @@ function LoginPage({
             </label>
 
             {message ? (
-              <p className="break-words rounded-[var(--radius-chip)] border border-[oklch(0.65_0.22_25_/_0.25)] bg-[oklch(0.65_0.22_25_/_0.08)] px-3 py-2 text-sm text-[var(--danger)]">
-                {message}
-              </p>
+              <div className="flex items-start gap-2 break-words rounded-[var(--radius-chip)] border border-[oklch(0.65_0.22_25_/_0.25)] bg-[oklch(0.65_0.22_25_/_0.08)] px-3 py-2 text-sm text-[var(--danger)]">
+                <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                <p className="min-w-0 break-words">{message}</p>
+              </div>
             ) : null}
 
             <button

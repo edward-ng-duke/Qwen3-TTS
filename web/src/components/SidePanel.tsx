@@ -5,7 +5,6 @@ import {
   SheetContent,
   SheetDescription,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet"
 import { useUiStore, type PanelTab } from "@/stores/useUiStore"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -26,7 +25,6 @@ const TABS: { value: PanelTab; label: string }[] = [
 ]
 
 const desktopSpring = { type: "spring", stiffness: 240, damping: 28 } as const
-const mobileSpring = { type: "spring", stiffness: 200, damping: 30 } as const
 
 function useMediaQuery(query: string) {
   const getMatches = () =>
@@ -195,24 +193,17 @@ export function SidePanel(props: Props) {
         )}
       </AnimatePresence>
 
-      {/* Mobile: floating trigger + bottom sheet */}
+      {/* Mobile: bottom sheet opened from the top bar panel control. */}
       <Sheet open={!isDesktop && panelOpen} onOpenChange={setPanelOpen}>
-        <SheetTrigger asChild>
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.94 }}
-            transition={mobileSpring}
-            className="md:hidden fixed bottom-[calc(1rem+var(--safe-bottom))] right-[max(1rem,var(--safe-right))] z-30 inline-flex max-w-[calc(100vw-2rem)] items-center justify-center px-5 min-h-12 rounded-full text-white text-[14px] font-medium"
-            style={{
-              background: "var(--brand-gradient)",
-              boxShadow: "0 12px 32px var(--brand-glow)",
-            }}
-            aria-label={T.a11y.toggleSidePanel}
-          >
-            {TABS.find((t) => t.value === panelTab)?.label}
-          </motion.button>
-        </SheetTrigger>
-        <SheetContent side="bottom" className="!h-[min(88dvh,calc(100dvh-var(--safe-top)-0.75rem))] max-h-[min(88dvh,calc(100dvh-var(--safe-top)-0.75rem))] rounded-t-[var(--radius-island)] p-0 overflow-hidden">
+        <SheetContent
+          side="bottom"
+          className="!h-[min(88dvh,calc(100dvh-var(--safe-top)-0.75rem))] max-h-[min(88dvh,calc(100dvh-var(--safe-top)-0.75rem))] rounded-t-[var(--radius-island)] p-0 overflow-hidden"
+          style={{
+            background: "var(--bg-base)",
+            borderColor: "var(--glass-regular-border)",
+            boxShadow: "var(--shadow-elevate)",
+          }}
+        >
           <SheetTitle className="sr-only">控制面板</SheetTitle>
           <SheetDescription className="sr-only">
             切换音色库、历史记录和高级参数。

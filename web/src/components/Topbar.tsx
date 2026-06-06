@@ -60,8 +60,8 @@ export function Topbar() {
           <span className="shrink-0 font-semibold tracking-tight text-[15px] text-[var(--text-primary)]">
             {T.brand.name}
           </span>
-          <span className="hidden min-[380px]:inline text-[var(--text-tertiary)]" aria-hidden>·</span>
-          <span className="hidden min-[380px]:inline text-[13px] text-[var(--text-secondary)] truncate">
+          <span className="hidden min-[430px]:inline text-[var(--text-tertiary)]" aria-hidden>·</span>
+          <span className="hidden min-[430px]:inline text-[13px] text-[var(--text-secondary)] truncate">
             {T.brand.subtitle}
           </span>
         </div>

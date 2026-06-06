@@ -5,6 +5,15 @@ export const T = {
     fullTitle: '微趣 · 语音工作台',
   },
 
+  home: {
+    eyebrow: 'Qwen3-TTS 工作台',
+    title: '把文本整理成可交付的自然语音',
+    description: '选择音色、语种和情绪后开始合成。高级参数收纳在侧栏，常用任务保留在主编辑区。',
+    docs: '查看接口文档',
+    resultsTitle: '最近生成',
+    resultsDescription: '生成结果会保存在本机浏览器，可播放、下载、复用参数或复制 API 示例。',
+  },
+
   topbar: {
     sidePanelOpen: '展开侧栏',
     sidePanelClose: '收起侧栏',
@@ -18,6 +27,11 @@ export const T = {
   },
 
   composer: {
+    textLabel: '合成文本',
+    textHelper: '建议一次输入一段完整内容；长文本会自动估算耗时。',
+    controlsLabel: '合成设置',
+    languageLabel: '语种',
+    voiceLabel: '当前音色',
     placeholder: '在这里输入你想合成的文本…',
     submit: '开始合成',
     submitting: '合成中',
@@ -94,6 +108,7 @@ export const T = {
 
   results: {
     empty: '生成结果会出现在这里',
+    emptyHint: '输入文本并点击开始合成后，可在这里试听、下载或复制 API 示例。',
     play: '播放',
     pause: '暂停',
     download: '下载音频',
@@ -102,6 +117,8 @@ export const T = {
     copied: '已复制',
     copyFailed: '复制失败',
     delete: '删除',
+    expand: '展开全文',
+    collapse: '收起',
   },
 
   toasts: {

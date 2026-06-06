@@ -39,6 +39,17 @@ export function Advanced() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-[var(--radius-card)] p-3"
+        style={{
+          background: "var(--glass-thin-bg)",
+          border: "1px solid var(--glass-thin-border)",
+        }}
+      >
+        <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">采样参数</h3>
+        <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+          默认值适合大多数场景；需要更稳定时降低随机度，需要更多变化时提高随机度。
+        </p>
+      </div>
       <Row label={T.sidePanel.advanced.temperature}
            hint={T.sidePanel.advanced.temperatureHint}
            value={advanced.temperature ?? 0.9}

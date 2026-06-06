@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { AnimatePresence, motion } from "motion/react"
+import { Clock3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useHistory } from "@/hooks/useHistory"
 import { HistoryItem } from "./HistoryItem"
@@ -23,9 +24,20 @@ export function History() {
 
   if (items.length === 0) {
     return (
-      <p className="text-[13px] text-[var(--text-secondary)]">
-        {T.sidePanel.history.empty}
-      </p>
+      <div className="rounded-[var(--radius-card)] p-4 text-center"
+        style={{
+          background: "var(--glass-thin-bg)",
+          border: "1px dashed var(--glass-regular-border)",
+        }}
+      >
+        <Clock3 className="mx-auto mb-2 size-5 text-[var(--brand)]" />
+        <p className="text-[13px] font-medium text-[var(--text-primary)]">
+          {T.sidePanel.history.empty}
+        </p>
+        <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+          每次合成后会自动保存文本、音色、情绪和参数，便于复用。
+        </p>
+      </div>
     )
   }
 

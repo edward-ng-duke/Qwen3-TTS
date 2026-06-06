@@ -88,17 +88,39 @@ export function Composer() {
     >
       <GlassCard
         variant="strong"
-        className="rounded-[var(--radius-island)] p-3 sm:p-5 md:p-7 space-y-3 sm:space-y-4"
+        className="rounded-[var(--radius-island)] p-3 sm:p-5 md:p-7 space-y-4 sm:space-y-5"
         style={{ boxShadow: "var(--shadow-elevate)" }}
       >
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <label
+              htmlFor="tts-text"
+              className="block text-[14px] font-semibold text-[var(--text-primary)]"
+            >
+              {T.composer.textLabel}
+            </label>
+            <p className="mt-1 break-words text-[12px] leading-relaxed text-[var(--text-tertiary)]">
+              {T.composer.textHelper}
+            </p>
+          </div>
+          <div className="shrink-0 rounded-full px-2.5 py-1 text-[12px] tabular-nums text-[var(--text-tertiary)]"
+            style={{
+              background: "var(--glass-thin-bg)",
+              border: "1px solid var(--glass-thin-border)",
+            }}
+          >
+            {composer.text.length} 字
+          </div>
+        </div>
         <div
           className="rounded-[var(--radius-input)] transition-shadow duration-200 focus-within:[box-shadow:0_0_0_4px_var(--brand-glow)]"
         >
           <Textarea
+            id="tts-text"
             value={composer.text}
             onChange={(e) => composer.setText(e.target.value)}
             placeholder={T.composer.placeholder}
-            className="min-h-[150px] sm:min-h-[200px] resize-y rounded-[var(--radius-input)] text-base sm:text-[15px] leading-relaxed border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[var(--text-secondary)]"
+            className="min-h-[120px] sm:min-h-[200px] resize-y rounded-[var(--radius-input)] text-base sm:text-[15px] leading-relaxed border-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[var(--text-secondary)]"
             style={{
               background: "var(--input-well-bg)",
               border: "1px solid var(--input-well-border)",
@@ -113,32 +135,49 @@ export function Composer() {
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
-          <Select value={composer.language} onValueChange={composer.setLanguage}>
-            <SelectTrigger
-              className="h-11 sm:h-9 w-full sm:w-32 rounded-full border-0 px-3 text-base sm:text-[13px]"
-              style={{
-                background: "var(--glass-thin-bg)",
-                backdropFilter: "blur(var(--glass-thin-blur))",
-                WebkitBackdropFilter: "blur(var(--glass-thin-blur))",
-                border: "1px solid var(--glass-thin-border)",
-              }}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {langOptions.map((l) => (
-                <SelectItem key={l} value={l}>{formatLanguage(l)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <VoicePill
-            voice={currentVoice}
-            onClick={() => { setPanelTab("voices"); setPanelOpen(true) }}
-            className="w-full sm:w-auto justify-start sm:justify-center"
-          />
-          <div className="w-full sm:w-auto sm:ml-auto text-right text-[12px] text-[var(--text-tertiary)] tabular-nums">
-            {composer.text.length} 字
+        <div className="space-y-2">
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <span className="text-[13px] font-medium text-[var(--text-secondary)]">
+              {T.composer.controlsLabel}
+            </span>
+            <span className="hidden sm:inline text-[12px] text-[var(--text-tertiary)]">
+              {T.composer.shortcutHint}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(8rem,10rem)_minmax(0,1fr)]">
+            <div className="min-w-0">
+              <span className="mb-1 block text-[11px] font-medium text-[var(--text-tertiary)]">
+                {T.composer.languageLabel}
+              </span>
+              <Select value={composer.language} onValueChange={composer.setLanguage}>
+                <SelectTrigger
+                  className="h-11 sm:h-9 w-full rounded-full border-0 px-3 text-base sm:text-[13px]"
+                  style={{
+                    background: "var(--glass-thin-bg)",
+                    backdropFilter: "blur(var(--glass-thin-blur))",
+                    WebkitBackdropFilter: "blur(var(--glass-thin-blur))",
+                    border: "1px solid var(--glass-thin-border)",
+                  }}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {langOptions.map((l) => (
+                    <SelectItem key={l} value={l}>{formatLanguage(l)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-0">
+              <span className="mb-1 block text-[11px] font-medium text-[var(--text-tertiary)]">
+                {T.composer.voiceLabel}
+              </span>
+              <VoicePill
+                voice={currentVoice}
+                onClick={() => { setPanelTab("voices"); setPanelOpen(true) }}
+                className="w-full justify-start"
+              />
+            </div>
           </div>
         </div>
 

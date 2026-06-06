@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import type { KeyboardEvent } from "react"
 import { Play, Pause, Download, RotateCcw, Copy, Trash2 } from "lucide-react"
 import { motion } from "motion/react"
 import type { HistoryItem } from "@/lib/db"
@@ -58,6 +59,7 @@ export function ResultCard({ item, onDelete }: Props) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const canExpand = item.text.length > 120
 
   useEffect(() => {
     const u = URL.createObjectURL(item.audioBlob)
@@ -133,15 +135,28 @@ JSON`
     }
   }
 
-  const seekTo = (e: React.MouseEvent<HTMLDivElement>) => {
+  const setAudioProgress = (ratio: number) => {
     const a = audioRef.current
-    const t = trackRef.current
-    if (!a || !t || !a.duration) return
-    const rect = t.getBoundingClientRect()
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-    a.currentTime = ratio * a.duration
-    setProgress(ratio)
+    if (!a || !a.duration) return
+    const next = Math.max(0, Math.min(1, ratio))
+    a.currentTime = next * a.duration
+    setProgress(next)
     setCurrentTime(a.currentTime)
+  }
+
+  const seekTo = (e: React.MouseEvent<HTMLDivElement>) => {
+    const t = trackRef.current
+    if (!t) return
+    const rect = t.getBoundingClientRect()
+    setAudioProgress((e.clientX - rect.left) / rect.width)
+  }
+
+  const onSeekKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return
+    e.preventDefault()
+    if (e.key === "Home") return setAudioProgress(0)
+    if (e.key === "End") return setAudioProgress(1)
+    setAudioProgress(progress + (e.key === "ArrowRight" ? 0.05 : -0.05))
   }
 
   return (
@@ -173,12 +188,26 @@ JSON`
         </span>
       </header>
 
-      <p
-        className="min-w-0 break-words text-[14px] leading-relaxed text-[var(--text-primary)] cursor-pointer"
-        onClick={() => setExpanded((v) => !v)}
-      >
-        {expanded ? item.text : truncate(item.text, 120)}
-      </p>
+      <div className="space-y-2">
+        <p
+          className="min-w-0 break-words text-[14px] leading-relaxed text-[var(--text-primary)]"
+        >
+          {expanded ? item.text : truncate(item.text, 120)}
+        </p>
+        {canExpand ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="inline-flex min-h-9 items-center rounded-full px-3 text-[12px] font-medium text-[var(--brand)] transition-colors hover:text-[var(--text-primary)]"
+            style={{
+              background: "color-mix(in oklab, var(--brand) 8%, transparent)",
+              border: "1px solid color-mix(in oklab, var(--brand) 16%, transparent)",
+            }}
+          >
+            {expanded ? T.results.collapse : T.results.expand}
+          </button>
+        ) : null}
+      </div>
 
       <div
         className="flex max-[430px]:flex-col items-stretch gap-2 rounded-2xl p-2 sm:pl-2 sm:pr-4 sm:py-2"
@@ -216,6 +245,7 @@ JSON`
             onClick={seekTo}
             onMouseEnter={() => setSeekHover(true)}
             onMouseLeave={() => setSeekHover(false)}
+            onKeyDown={onSeekKeyDown}
             aria-label={T.a11y.seekProgress}
             role="slider"
             tabIndex={0}

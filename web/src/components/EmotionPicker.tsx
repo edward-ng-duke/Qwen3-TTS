@@ -35,7 +35,7 @@ export function EmotionPicker({ value, onChange }: Props) {
             transition={spring}
             aria-pressed={selected}
             className={cn(
-              "relative inline-flex flex-1 sm:flex-none justify-center items-center gap-1.5 min-h-10 sm:min-h-8 sm:h-8 px-3 rounded-full text-[13px] select-none",
+              "relative inline-flex min-w-[5.75rem] flex-1 sm:flex-none justify-center items-center gap-1.5 min-h-10 sm:min-h-8 sm:h-8 px-3 rounded-full text-[13px] select-none whitespace-nowrap",
               "transition-colors",
               selected
                 ? "text-white"
@@ -63,7 +63,7 @@ export function EmotionPicker({ value, onChange }: Props) {
               />
             )}
             <span className="relative z-10 text-[15px] leading-none">{p.emoji}</span>
-            <span className="relative z-10">{ZH_LABEL[p.name] ?? p.name}</span>
+            <span className="relative z-10 whitespace-nowrap">{ZH_LABEL[p.name] ?? p.name}</span>
           </motion.button>
         )
       })}
