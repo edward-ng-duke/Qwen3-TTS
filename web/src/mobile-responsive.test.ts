@@ -13,13 +13,22 @@ function read(relativePath: string): string {
 describe("mobile responsive implementation", () => {
   it("uses dynamic viewport units and safe-area aware globals", () => {
     const css = read("web/src/styles/globals.css")
-    const app = read("web/src/App.tsx")
 
     expect(css).toContain("overflow-x: hidden")
     expect(css).toContain("--safe-bottom")
     expect(css).toContain("touch-action: manipulation")
-    expect(app).toContain("min-h-dvh")
-    expect(app).toContain("pb-[calc")
+
+    // The dynamic-viewport + safe-area shell lives in each variant Studio
+    // (App.tsx is only the variant router since the variant-adaptive refactor).
+    for (const studio of [
+      "web/src/studios/CustomVoiceStudio.tsx",
+      "web/src/studios/VoiceDesignStudio.tsx",
+      "web/src/studios/CloneStudio.tsx",
+    ]) {
+      const src = read(studio)
+      expect(src, `${studio} should use min-h-dvh`).toContain("min-h-dvh")
+      expect(src, `${studio} should pad for the safe area`).toContain("pb-[calc")
+    }
   })
 
   it("adapts the main mobile controls instead of relying on desktop sizing", () => {

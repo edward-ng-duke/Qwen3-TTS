@@ -1,3 +1,5 @@
+import { useState } from "react"
+import { ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { useUiStore } from "@/stores/useUiStore"
@@ -36,6 +38,7 @@ export function Advanced() {
   const advanced = useUiStore((s) => s.advanced)
   const setAdvanced = useUiStore((s) => s.setAdvanced)
   const reset = useUiStore((s) => s.resetAdvanced)
+  const [expertOpen, setExpertOpen] = useState(false)
 
   return (
     <div className="space-y-4">
@@ -47,7 +50,7 @@ export function Advanced() {
       >
         <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">采样参数</h3>
         <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-secondary)]">
-          默认值适合大多数场景；需要更稳定时降低随机度，需要更多变化时提高随机度。
+          多数场景只需调「随机度」即可在稳定与多样之间取舍，其余参数已调好默认值。
         </p>
       </div>
       <Row label={T.sidePanel.advanced.temperature}
@@ -55,42 +58,61 @@ export function Advanced() {
            value={advanced.temperature ?? 0.9}
            onChange={(v) => setAdvanced({ temperature: v })}
            min={0.1} max={1.5} step={0.05} />
-      <Row label={T.sidePanel.advanced.topK}
-           value={advanced.top_k ?? 50}
-           onChange={(v) => setAdvanced({ top_k: Math.round(v) })}
-           min={1} max={100} step={1} />
-      <Row label={T.sidePanel.advanced.topP}
-           hint={T.sidePanel.advanced.topPHint}
-           value={advanced.top_p ?? 1.0}
-           onChange={(v) => setAdvanced({ top_p: v })}
-           min={0.1} max={1.0} step={0.05} />
-      <Row label="重复惩罚"
-           value={advanced.repetition_penalty ?? 1.05}
-           onChange={(v) => setAdvanced({ repetition_penalty: v })}
-           min={1.0} max={1.5} step={0.01} />
-      <Row label="最大生成长度"
-           value={advanced.max_new_tokens ?? 2048}
-           onChange={(v) => setAdvanced({ max_new_tokens: Math.round(v) })}
-           min={256} max={4096} step={128} />
-      <div className="pt-3 border-t" style={{ borderColor: "var(--glass-thin-border)" }}>
-        <h4 className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-medium mb-2">
-          副音轨参数
-        </h4>
-        <div className="space-y-3">
-          <Row label="副音轨 · 随机度"
-               value={advanced.subtalker_temperature ?? 0.9}
-               onChange={(v) => setAdvanced({ subtalker_temperature: v })}
-               min={0.1} max={1.5} step={0.05} />
-          <Row label="副音轨 · 候选数"
-               value={advanced.subtalker_top_k ?? 50}
-               onChange={(v) => setAdvanced({ subtalker_top_k: Math.round(v) })}
+
+      <button
+        type="button"
+        onClick={() => setExpertOpen((o) => !o)}
+        aria-expanded={expertOpen}
+        className="flex w-full items-center justify-between rounded-[var(--radius-input)] px-2.5 py-2 text-[12px] font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+        style={{ background: "var(--glass-thin-bg)", border: "1px solid var(--glass-thin-border)" }}
+      >
+        <span>专家参数（候选数 / 核采样 / 重复惩罚 / 长度 / 副音轨）</span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 transition-transform ${expertOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {expertOpen && (
+        <div className="space-y-4">
+          <Row label={T.sidePanel.advanced.topK}
+               value={advanced.top_k ?? 50}
+               onChange={(v) => setAdvanced({ top_k: Math.round(v) })}
                min={1} max={100} step={1} />
-          <Row label="副音轨 · 核采样阈值"
-               value={advanced.subtalker_top_p ?? 1.0}
-               onChange={(v) => setAdvanced({ subtalker_top_p: v })}
+          <Row label={T.sidePanel.advanced.topP}
+               hint={T.sidePanel.advanced.topPHint}
+               value={advanced.top_p ?? 1.0}
+               onChange={(v) => setAdvanced({ top_p: v })}
                min={0.1} max={1.0} step={0.05} />
+          <Row label="重复惩罚"
+               value={advanced.repetition_penalty ?? 1.05}
+               onChange={(v) => setAdvanced({ repetition_penalty: v })}
+               min={1.0} max={1.5} step={0.01} />
+          <Row label="最大生成长度"
+               value={advanced.max_new_tokens ?? 2048}
+               onChange={(v) => setAdvanced({ max_new_tokens: Math.round(v) })}
+               min={256} max={4096} step={128} />
+          <div className="pt-3 border-t" style={{ borderColor: "var(--glass-thin-border)" }}>
+            <h4 className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-medium mb-2">
+              副音轨参数
+            </h4>
+            <div className="space-y-3">
+              <Row label="副音轨 · 随机度"
+                   value={advanced.subtalker_temperature ?? 0.9}
+                   onChange={(v) => setAdvanced({ subtalker_temperature: v })}
+                   min={0.1} max={1.5} step={0.05} />
+              <Row label="副音轨 · 候选数"
+                   value={advanced.subtalker_top_k ?? 50}
+                   onChange={(v) => setAdvanced({ subtalker_top_k: Math.round(v) })}
+                   min={1} max={100} step={1} />
+              <Row label="副音轨 · 核采样阈值"
+                   value={advanced.subtalker_top_p ?? 1.0}
+                   onChange={(v) => setAdvanced({ subtalker_top_p: v })}
+                   min={0.1} max={1.0} step={0.05} />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
       <Button variant="outline" size="sm" onClick={reset} className="w-full min-h-11 sm:min-h-9">
         {T.sidePanel.advanced.reset}
       </Button>
