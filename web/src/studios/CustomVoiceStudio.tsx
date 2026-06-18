@@ -10,7 +10,8 @@ import { useUiStore } from "@/stores/useUiStore"
 import { useShortcuts } from "@/hooks/useShortcuts"
 import { AuthGate } from "@/components/AuthGate"
 import { T } from "@/lib/i18n"
-import { ExternalLink } from "lucide-react"
+import { Images } from "lucide-react"
+import { Link } from "@/lib/router"
 
 const TAB_CYCLE = ["voices", "history", "advanced"] as const
 
@@ -49,19 +50,18 @@ export function CustomVoiceStudio() {
                     {T.home.description}
                   </p>
                 </div>
-                <a
-                  href="/docs"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-h-11 sm:min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+                <Link
+                  to="/gallery"
+                  className="inline-flex min-h-11 sm:min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-colors"
                   style={{
-                    background: "var(--glass-thin-bg)",
-                    border: "1px solid var(--glass-thin-border)",
+                    color: "var(--brand)",
+                    background: "color-mix(in oklab, var(--brand) 10%, transparent)",
+                    border: "1px solid color-mix(in oklab, var(--brand) 22%, transparent)",
                   }}
                 >
-                  {T.home.docs}
-                  <ExternalLink className="size-3.5" />
-                </a>
+                  <Images className="size-3.5" />
+                  听听画廊
+                </Link>
               </div>
             </section>
             <Composer />
