@@ -13,16 +13,20 @@ import { T } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 interface Props {
-  voices: ReactNode
+  voices?: ReactNode
   history: ReactNode
   advanced: ReactNode
+  /** Which tabs to show. Default: all three (customvoice). */
+  tabs?: PanelTab[]
 }
 
-const TABS: { value: PanelTab; label: string }[] = [
-  { value: "voices", label: T.sidePanel.tabs.voices },
-  { value: "history", label: T.sidePanel.tabs.history },
-  { value: "advanced", label: T.sidePanel.tabs.advanced },
-]
+const TAB_LABEL: Record<PanelTab, string> = {
+  voices: T.sidePanel.tabs.voices,
+  history: T.sidePanel.tabs.history,
+  advanced: T.sidePanel.tabs.advanced,
+}
+
+const DEFAULT_TABS: PanelTab[] = ["voices", "history", "advanced"]
 
 const desktopSpring = { type: "spring", stiffness: 240, damping: 28 } as const
 
@@ -42,23 +46,32 @@ function useMediaQuery(query: string) {
   return matches
 }
 
-function TabBar({ tab, setTab }: { tab: PanelTab; setTab: (t: PanelTab) => void }) {
+function TabBar({
+  tabs,
+  tab,
+  setTab,
+}: {
+  tabs: PanelTab[]
+  tab: PanelTab
+  setTab: (t: PanelTab) => void
+}) {
   const reduce = useReducedMotion()
   return (
     <div
-      className="relative grid grid-cols-3 p-1.5 rounded-full"
+      className="relative grid p-1.5 rounded-full"
       style={{
+        gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
         background: "var(--glass-thin-bg)",
         border: "1px solid var(--glass-thin-border)",
       }}
     >
-      {TABS.map((t) => {
-        const active = tab === t.value
+      {tabs.map((value) => {
+        const active = tab === value
         return (
           <button
-            key={t.value}
+            key={value}
             type="button"
-            onClick={() => setTab(t.value)}
+            onClick={() => setTab(value)}
             className={cn(
               "relative min-h-11 sm:min-h-9 sm:h-9 text-[12.5px] rounded-full select-none transition-colors",
               active
@@ -106,7 +119,7 @@ function TabBar({ tab, setTab }: { tab: PanelTab; setTab: (t: PanelTab) => void 
                 }
               />
             )}
-            <span className="relative z-10">{t.label}</span>
+            <span className="relative z-10">{TAB_LABEL[value]}</span>
           </button>
         )
       })}
@@ -118,9 +131,10 @@ function PanelInner({
   voices,
   history,
   advanced,
+  tabs,
   tab,
   setTab,
-}: Props & { tab: PanelTab; setTab: (t: PanelTab) => void }) {
+}: Props & { tabs: PanelTab[]; tab: PanelTab; setTab: (t: PanelTab) => void }) {
   const reduce = useReducedMotion()
   const content =
     tab === "voices" ? voices : tab === "history" ? history : advanced
@@ -138,7 +152,7 @@ function PanelInner({
     : { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const }
   return (
     <div className="h-full min-h-0 flex flex-col gap-3 p-3 safe-bottom">
-      <TabBar tab={tab} setTab={setTab} />
+      <TabBar tabs={tabs} tab={tab} setTab={setTab} />
       <ScrollArea className="flex-1 min-h-0 -mx-1">
         <div className="px-1 pb-2">
           <AnimatePresence mode="wait">
@@ -163,12 +177,21 @@ export function SidePanel(props: Props) {
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const initializedMobilePanel = useRef(false)
 
+  const tabs = props.tabs ?? DEFAULT_TABS
+  // Clamp the persisted tab into this panel's allowed set (e.g. a studio without
+  // a "voices" tab must not get stuck on a persisted "voices" selection).
+  const effectiveTab = tabs.includes(panelTab) ? panelTab : tabs[0]
+
   useEffect(() => {
     if (!isDesktop && !initializedMobilePanel.current) {
       initializedMobilePanel.current = true
       setPanelOpen(false)
     }
   }, [isDesktop, setPanelOpen])
+
+  const inner = (
+    <PanelInner {...props} tabs={tabs} tab={effectiveTab} setTab={setPanelTab} />
+  )
 
   return (
     <>
@@ -187,7 +210,7 @@ export function SidePanel(props: Props) {
               className="h-full rounded-[var(--radius-island)] overflow-hidden"
               style={{ boxShadow: "var(--shadow-elevate)" }}
             >
-              <PanelInner {...props} tab={panelTab} setTab={setPanelTab} />
+              {inner}
             </GlassCard>
           </motion.aside>
         )}
@@ -208,7 +231,7 @@ export function SidePanel(props: Props) {
           <SheetDescription className="sr-only">
             切换音色库、历史记录和高级参数。
           </SheetDescription>
-          <PanelInner {...props} tab={panelTab} setTab={setPanelTab} />
+          {inner}
         </SheetContent>
       </Sheet>
     </>

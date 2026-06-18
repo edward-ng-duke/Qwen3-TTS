@@ -67,10 +67,29 @@ def test_base_routes_present(monkeypatch, tmp_path):
     monkeypatch.setattr(model_mod, "_instance", None)
 
 
-def test_root_redirects_for_non_customvoice(monkeypatch, tmp_path):
+def test_root_redirects_when_dist_missing(monkeypatch, tmp_path):
+    # When web/dist isn't built, every variant falls back to the Gradio redirect.
+    monkeypatch.setenv("WEB_DIST", str(tmp_path / "no-such-dist"))
     app = _build("voicedesign", monkeypatch, tmp_path)
     with TestClient(app) as c:
         r = c.get("/", follow_redirects=False)
         assert r.status_code in (307, 308)
         assert r.headers["location"].rstrip("/") == "/legacy"
+    monkeypatch.setattr(model_mod, "_instance", None)
+
+
+def test_root_serves_react_for_non_customvoice_when_dist_present(monkeypatch, tmp_path):
+    # The variant-adaptive React app is mounted at / for ALL variants (not just
+    # customvoice) when web/dist exists; the SPA self-selects via /v1/health.variant.
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<!doctype html><title>spa</title>")
+    monkeypatch.setenv("WEB_DIST", str(dist))
+    app = _build("base", monkeypatch, tmp_path)
+    with TestClient(app) as c:
+        r = c.get("/", follow_redirects=False)
+        assert r.status_code == 200
+        assert "text/html" in r.headers["content-type"].lower()
+        # Gradio stays reachable at /legacy as the fallback.
+        assert c.get("/legacy", follow_redirects=False).status_code in (200, 307, 308)
     monkeypatch.setattr(model_mod, "_instance", None)
