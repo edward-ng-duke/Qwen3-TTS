@@ -1,5 +1,6 @@
 import { useMemo } from "react"
-import { ExternalLink } from "lucide-react"
+import { Images } from "lucide-react"
+import { Link } from "@/lib/router"
 import { Topbar } from "@/components/Topbar"
 import { AuroraBackground } from "@/components/AuroraBackground"
 import { SidePanel } from "@/components/SidePanel"
@@ -57,16 +58,14 @@ export function CloneStudio() {
                           {T.clone.description}
                         </p>
                       </div>
-                      <a
-                        href="/docs"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex min-h-11 sm:min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
-                        style={{ background: "var(--glass-thin-bg)", border: "1px solid var(--glass-thin-border)" }}
+                      <Link
+                        to="/gallery"
+                        className="inline-flex min-h-11 sm:min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-colors"
+                        style={{ color: "var(--brand)", background: "color-mix(in oklab, var(--brand) 10%, transparent)", border: "1px solid color-mix(in oklab, var(--brand) 22%, transparent)" }}
                       >
-                        {T.home.docs}
-                        <ExternalLink className="size-3.5" />
-                      </a>
+                        <Images className="size-3.5" />
+                        听听画廊
+                      </Link>
                     </div>
                   </section>
                   <CloneComposer />

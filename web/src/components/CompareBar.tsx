@@ -9,15 +9,26 @@ import { ComparisonCard, type ComparisonColumn } from "@/components/ComparisonCa
 import { GlassCard } from "@/components/GlassCard"
 import { EMOTION_PRESETS, EMOTION_ZH, emotionInstructFor } from "@/lib/emotions"
 import { voiceNameById } from "@/lib/voiceMeta"
+import { formatLanguage } from "@/lib/format"
 
-type Axis = "voice" | "emotion"
+type Axis = "voice" | "emotion" | "language" | "temperature" | "speed"
 const MAX_PICKS = 4
+const TEMP_PRESETS = [0.3, 0.6, 0.9, 1.2]
+const SPEED_PRESETS = [0.8, 1.0, 1.2, 1.5]
 
 const AXES: { key: Axis | "off"; label: string }[] = [
   { key: "off", label: "关闭" },
   { key: "voice", label: "按音色" },
   { key: "emotion", label: "按情绪" },
+  { key: "language", label: "按语种" },
+  { key: "temperature", label: "按随机度" },
+  { key: "speed", label: "按语速" },
 ]
+
+/** A share variant id must match [A-Za-z0-9_-]; temperature/speed picks have dots. */
+function sanitizeVid(s: string): string {
+  return s.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 32)
+}
 
 export function CompareBar() {
   const text = useComposerStore((s) => s.text)
@@ -25,6 +36,7 @@ export function CompareBar() {
   const baseSpeaker = useComposerStore((s) => s.speakerId)
   const advanced = useUiStore((s) => s.advanced)
   const voicesQ = useQuery({ queryKey: ["voices"], queryFn: () => api.voices(), staleTime: 60_000 })
+  const languagesQ = useQuery({ queryKey: ["languages"], queryFn: () => api.languages(), staleTime: 60_000 })
 
   const [axis, setAxis] = useState<Axis | null>(null)
   const [picks, setPicks] = useState<string[]>([])
@@ -58,22 +70,31 @@ export function CompareBar() {
     setBusy(true); setColumns(null); setPubUrl(null)
     try {
       const tasks = picks.map(async (pick) => {
-        const vid = axis === "voice" ? pick : pick.toLowerCase()
-        let speaker = baseSpeaker
-        let instruct: string | null = null
+        const vid = sanitizeVid(`${axis}-${pick}`)
+        let blob: Blob
         let mv: ShareMetaVariant
         if (axis === "voice") {
-          speaker = pick
           mv = { id: vid, label: voiceNameById(pick), voice: pick, language }
-        } else {
+          ;({ blob } = await api.tts({ text, speaker: pick, language, sampling: advanced, response_format: "wav" }))
+        } else if (axis === "emotion") {
           const inst = emotionInstructFor(pick, "")
-          instruct = inst || null
-          mv = { id: vid, label: EMOTION_ZH[pick] ?? pick, voice: speaker,
+          mv = { id: vid, label: EMOTION_ZH[pick] ?? pick, voice: baseSpeaker,
                  emotion: EMOTION_ZH[pick] ?? pick, instruct: inst || undefined }
+          ;({ blob } = await api.tts({ text, speaker: baseSpeaker, language, instruct: inst || null, sampling: advanced, response_format: "wav" }))
+        } else if (axis === "language") {
+          mv = { id: vid, label: formatLanguage(pick), voice: baseSpeaker, language: pick }
+          ;({ blob } = await api.tts({ text, speaker: baseSpeaker, language: pick, sampling: advanced, response_format: "wav" }))
+        } else if (axis === "temperature") {
+          const t = Number(pick)
+          mv = { id: vid, label: `随机度 ${t}`, voice: baseSpeaker, temperature: t }
+          ;({ blob } = await api.tts({ text, speaker: baseSpeaker, language, sampling: { ...advanced, temperature: t }, response_format: "wav" }))
+        } else {
+          // speed: native /v1/tts has no speed param; use the OpenAI-compatible
+          // endpoint (librosa time-stretch). Base voice, no instruct — speed-only compare.
+          const sp = Number(pick)
+          mv = { id: vid, label: `${sp}×`, voice: baseSpeaker, speed: sp }
+          ;({ blob } = await api.audioSpeech(text, baseSpeaker, sp))
         }
-        const { blob } = await api.tts({
-          text, speaker, language, instruct, sampling: advanced, response_format: "wav",
-        })
         return { vid, label: mv.label, blob, mv }
       })
       const settled = await Promise.all(tasks)
@@ -112,11 +133,14 @@ export function CompareBar() {
     } catch { toast.error("复制失败") }
   }
 
-  const options = axis === "voice"
-    ? voiceOptions.map((v) => ({ id: v.id, label: voiceNameById(v.id) }))
-    : axis === "emotion"
-      ? emotionOptions.map((e) => ({ id: e.name, label: `${e.emoji} ${EMOTION_ZH[e.name] ?? e.name}` }))
-      : []
+  const languageOptions = (languagesQ.data ?? []).filter((l) => l.toLowerCase() !== "auto")
+  const options: { id: string; label: string }[] =
+    axis === "voice" ? voiceOptions.map((v) => ({ id: v.id, label: voiceNameById(v.id) }))
+    : axis === "emotion" ? emotionOptions.map((e) => ({ id: e.name, label: `${e.emoji} ${EMOTION_ZH[e.name] ?? e.name}` }))
+    : axis === "language" ? languageOptions.map((l) => ({ id: l, label: formatLanguage(l) }))
+    : axis === "temperature" ? TEMP_PRESETS.map((t) => ({ id: String(t), label: `随机度 ${t}` }))
+    : axis === "speed" ? SPEED_PRESETS.map((s) => ({ id: String(s), label: `${s}×` }))
+    : []
 
   return (
     <GlassCard variant="thin" className="space-y-3 rounded-[var(--radius-card)] p-3">

@@ -64,7 +64,9 @@ def main() -> int:
             meta = {
                 "text": sc["text"],
                 "dimension": sc["dimension"],
-                "variants": [{k: val for k, val in v.items() if k != "text"} for v in sc["variants"]],
+                # Keep per-variant `text` (multilingual translations) so each column
+                # shows its own sentence; other scenarios simply omit it.
+                "variants": [dict(v) for v in sc["variants"]],
             }
             r = client.post(f"{args.base_url}/v1/share/publish",
                             data={"metadata": json.dumps(meta, ensure_ascii=False)},

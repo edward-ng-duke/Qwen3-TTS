@@ -10,7 +10,7 @@ import { Link, segmentAfter, usePath } from "@/lib/router"
 import { columnsFromWork } from "@/lib/shareView"
 
 const DIMENSION_ZH: Record<string, string> = {
-  voice: "音色", emotion: "情绪", language: "语种", temperature: "随机度", speed: "语速",
+  voice: "音色", emotion: "情绪", language: "语种", temperature: "随机度", speed: "语速", dialect: "方言",
 }
 
 function GalleryList() {

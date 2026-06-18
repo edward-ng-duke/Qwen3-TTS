@@ -12,6 +12,8 @@ export interface ComparisonColumn {
   sublabel?: string
   audioUrl: string
   durationSec?: number
+  /** Per-variant text (e.g. a translation in the multilingual scenario). */
+  text?: string
 }
 
 const DIMENSION_ZH: Record<string, string> = {
@@ -20,6 +22,7 @@ const DIMENSION_ZH: Record<string, string> = {
   language: "按语种",
   temperature: "按随机度",
   speed: "按语速",
+  dialect: "按方言",
 }
 
 interface ColumnViewProps {
@@ -53,9 +56,14 @@ function ColumnView({ col, registerAudio, onUseParams }: ColumnViewProps) {
         <div className="truncate text-[13px] font-semibold text-[var(--text-primary)]" title={col.label}>
           {col.label}
         </div>
-        {col.sublabel && (
+        {col.sublabel && col.sublabel !== col.label && (
           <div className="truncate text-[11px] text-[var(--text-tertiary)]" title={col.sublabel}>
             {col.sublabel}
+          </div>
+        )}
+        {col.text && (
+          <div className="mt-1 break-words text-[11px] leading-snug text-[var(--text-secondary)]" title={col.text}>
+            {col.text}
           </div>
         )}
       </div>

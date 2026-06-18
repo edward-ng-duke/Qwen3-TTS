@@ -127,6 +127,7 @@ export interface ShareVariantOut {
   temperature?: number | null
   speed?: number | null
   duration_ms?: number | null
+  text?: string | null
   audio_url: string
 }
 export interface ShareWork {
@@ -149,6 +150,7 @@ export interface ShareMetaVariant {
   temperature?: number
   speed?: number
   duration_ms?: number
+  text?: string
 }
 export interface ShareMetadata {
   text: string
@@ -241,6 +243,17 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ response_format: "wav", ...req }),
+      signal,
+    })
+  },
+
+  // OpenAI-compatible endpoint — used by the compare "by speed" axis (native /v1/tts
+  // has no speed param; this applies librosa time-stretch server-side).
+  audioSpeech(input: string, voice: string, speed: number, signal?: AbortSignal) {
+    return fetchAudio("/v1/audio/speech", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input, voice, speed, response_format: "wav" }),
       signal,
     })
   },
