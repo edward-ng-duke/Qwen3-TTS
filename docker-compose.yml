@@ -22,6 +22,10 @@ services:
       ES_AUTH_ENABLED: ${ES_AUTH_ENABLED:-false}
       ES_AUTH_URL: ${ES_AUTH_URL:-http://10.0.0.33:9201}
       ES_USER_INDEX: ${ES_USER_INDEX:-mygpt_user}
+      # Public share/gallery. SHARE_ENABLED=auto turns it on whenever MONGO_URL
+      # is set; audio is stored on the qwen-tts-shared volume below.
+      SHARE_ENABLED: ${SHARE_ENABLED:-auto}
+      SHARED_DIR: ${SHARED_DIR:-/var/qwen-tts/shared}
     secrets:
       - jwt_secret
     command: >
@@ -31,6 +35,7 @@ services:
       - "4967:4967"
     volumes:
       - qwen-tts-previews:/var/qwen-tts/previews
+      - qwen-tts-shared:/var/qwen-tts/shared
     deploy:
       resources:
         reservations:
@@ -42,6 +47,7 @@ services:
 
 volumes:
   qwen-tts-previews:
+  qwen-tts-shared:
 
 secrets:
   jwt_secret:

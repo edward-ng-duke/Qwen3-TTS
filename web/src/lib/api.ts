@@ -116,6 +116,56 @@ export class ApiError extends Error {
   }
 }
 
+// —— share / gallery ——
+export interface ShareVariantOut {
+  id: string
+  label: string
+  voice?: string | null
+  language?: string | null
+  emotion?: string | null
+  instruct?: string | null
+  temperature?: number | null
+  speed?: number | null
+  duration_ms?: number | null
+  audio_url: string
+}
+export interface ShareWork {
+  slug: string
+  text: string
+  dimension: string
+  variants: ShareVariantOut[]
+  kind: string
+  created_at?: string | null
+  gallery_order?: number | null
+  title?: string | null
+}
+export interface ShareMetaVariant {
+  id: string
+  label: string
+  voice?: string
+  language?: string
+  emotion?: string
+  instruct?: string
+  temperature?: number
+  speed?: number
+  duration_ms?: number
+}
+export interface ShareMetadata {
+  text: string
+  dimension: string
+  variants: ShareMetaVariant[]
+}
+export interface RegenerateVariant {
+  id: string
+  label: string
+  audio_base64: string
+  duration_ms: number
+}
+export interface RegenerateResult {
+  text: string
+  variants: RegenerateVariant[]
+}
+
 const BASE = "" // 同源，dev 由 vite proxy 转发
 
 function withAuth(init?: RequestInit): RequestInit {
@@ -243,4 +293,24 @@ export const api = {
     appendCloneSampling(fd, p)
     return fetchAudio("/v1/voice/generate", { method: "POST", body: fd, signal })
   },
+
+  // —— share / gallery ——
+  gallery: () => fetchJson<{ items: ShareWork[] }>("/v1/gallery").then((d) => d.items),
+  share: (slug: string) => fetchJson<ShareWork>(`/v1/share/${encodeURIComponent(slug)}`),
+  shareAudioUrl: (slug: string, variantId: string) =>
+    `${BASE}/v1/share/${encodeURIComponent(slug)}/audio/${encodeURIComponent(variantId)}`,
+  publishShare(meta: ShareMetadata, audioByVariant: Record<string, Blob>) {
+    const fd = new FormData()
+    fd.append("metadata", JSON.stringify(meta))
+    for (const [id, blob] of Object.entries(audioByVariant)) {
+      fd.append(`audio_${id}`, blob, `${id}.wav`)
+    }
+    return fetchJson<{ slug: string; url: string }>("/v1/share/publish", { method: "POST", body: fd })
+  },
+  regenerate: (sourceSlug: string, newText: string) =>
+    fetchJson<RegenerateResult>("/v1/share/regenerate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source_slug: sourceSlug, new_text: newText }),
+    }),
 }

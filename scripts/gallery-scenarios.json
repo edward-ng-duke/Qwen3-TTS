@@ -1,0 +1,32 @@
+[
+  {
+    "title": "9 音色巡礼",
+    "text": "你好呀，欢迎来体验我们的语音合成，希望你喜欢。",
+    "dimension": "voice",
+    "variants": [
+      { "id": "vivian", "label": "薇薇安", "voice": "vivian", "language": "Auto" },
+      { "id": "serena", "label": "思琳", "voice": "serena", "language": "Auto" },
+      { "id": "uncle_fu", "label": "福伯", "voice": "uncle_fu", "language": "Auto" },
+      { "id": "ryan", "label": "莱恩", "voice": "ryan", "language": "Auto" },
+      { "id": "aiden", "label": "艾登", "voice": "aiden", "language": "Auto" },
+      { "id": "ono_anna", "label": "小野安娜", "voice": "ono_anna", "language": "Auto" },
+      { "id": "sohee", "label": "素熙", "voice": "sohee", "language": "Auto" },
+      { "id": "eric", "label": "艾里克", "voice": "eric", "language": "Auto" },
+      { "id": "dylan", "label": "迪伦", "voice": "dylan", "language": "Auto" }
+    ]
+  },
+  {
+    "title": "7 情绪同句",
+    "text": "真没想到，事情居然会变成现在这个样子。",
+    "dimension": "emotion",
+    "variants": [
+      { "id": "neutral", "label": "中性", "voice": "vivian", "emotion": "中性" },
+      { "id": "happy", "label": "开心", "voice": "vivian", "emotion": "开心", "instruct": "用开心愉悦的语气说" },
+      { "id": "sad", "label": "悲伤", "voice": "vivian", "emotion": "悲伤", "instruct": "用悲伤低落的语气说" },
+      { "id": "angry", "label": "愤怒", "voice": "vivian", "emotion": "愤怒", "instruct": "用愤怒激动的语气说" },
+      { "id": "fearful", "label": "害怕", "voice": "vivian", "emotion": "害怕", "instruct": "用害怕颤抖的语气说" },
+      { "id": "calm", "label": "平静", "voice": "vivian", "emotion": "平静", "instruct": "用平静舒缓的语气说" },
+      { "id": "surprised", "label": "惊讶", "voice": "vivian", "emotion": "惊讶", "instruct": "用惊讶意外的语气说" }
+    ]
+  }
+]

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { Wand2, Palette } from "lucide-react"
+import { Wand2, Palette, X } from "lucide-react"
 import { motion } from "motion/react"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -184,6 +184,16 @@ export function DesignComposer() {
               </>
             )}
           </MagneticButton>
+          {gen.isPending && (
+            <button
+              type="button"
+              onClick={() => gen.cancel()}
+              className="inline-flex min-h-11 sm:min-h-9 items-center justify-center gap-1 rounded-full px-4 text-[13px] font-medium transition-colors"
+              style={{ color: "var(--danger)", background: "var(--glass-thin-bg)", border: "1px solid var(--glass-thin-border)" }}
+            >
+              <X className="size-3.5" /> 取消
+            </button>
+          )}
           <span
             className="text-[12px] text-[var(--text-tertiary)] tabular-nums text-center sm:text-left"
             aria-live={gen.isPending ? "polite" : undefined}
