@@ -109,10 +109,20 @@ def build_router(cfg: ServeConfig) -> APIRouter:
         if model_mod.is_ready():
             try:
                 model_langs = model_mod.get_model().model.get_supported_languages() or []
+                # Dedupe case-insensitively so the model's lowercase "auto" doesn't
+                # produce a second "Auto" entry. Keep each value's original casing —
+                # it's echoed back as the generation `language`, so re-casing risks
+                # breaking model calls.
                 merged: List[str] = ["Auto"]
+                seen = {"auto"}
                 for l in model_langs:
-                    if l and l not in merged:
-                        merged.append(l)
+                    if not l:
+                        continue
+                    key = l.strip().lower()
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    merged.append(l)
                 langs = merged
             except Exception:
                 pass
