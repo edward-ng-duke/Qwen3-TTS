@@ -151,6 +151,63 @@
   }
 }
 
+/* === Per-variant accent skins ===
+ * VariantThemeProvider sets one of these classes on a display:contents wrapper.
+ * Overriding --brand/--brand-gradient/--brand-glow recolors every brand-driven
+ * surface (buttons, cards, waveform, tabs); --bg-aurora-* tints the ambient
+ * background so each model reads as a distinct "face" of one product.
+ * customvoice keeps the default purple (no class). Light first, then .dark. */
+.variant-voicedesign {
+  --brand: oklch(0.62 0.21 350);
+  --brand-gradient: linear-gradient(135deg, oklch(0.66 0.23 10), oklch(0.62 0.2 330));
+  --brand-glow: oklch(0.62 0.21 350 / 0.4);
+  --bg-aurora-a: oklch(0.86 0.16 350);
+  --bg-aurora-b: oklch(0.84 0.15 20);
+  --bg-aurora-c: oklch(0.87 0.12 320);
+}
+/* Two forms: `.dark .variant-*` matches the in-tree display:contents wrapper
+ * (descendant of <html.dark>); `.dark.variant-*` matches when the class sits on
+ * <html> itself (set by VariantThemeProvider so portaled body content inherits it). */
+.dark .variant-voicedesign,
+.dark.variant-voicedesign {
+  --brand: oklch(0.72 0.21 350);
+  --brand-gradient: linear-gradient(135deg, oklch(0.74 0.22 10), oklch(0.7 0.2 330));
+  --brand-glow: oklch(0.72 0.21 350 / 0.5);
+  --bg-aurora-a: oklch(0.5 0.25 350);
+  --bg-aurora-b: oklch(0.48 0.22 20);
+  --bg-aurora-c: oklch(0.5 0.18 320);
+}
+
+.variant-base {
+  --brand: oklch(0.62 0.13 195);
+  --brand-gradient: linear-gradient(135deg, oklch(0.68 0.13 200), oklch(0.72 0.13 165));
+  --brand-glow: oklch(0.62 0.13 195 / 0.4);
+  --bg-aurora-a: oklch(0.86 0.12 200);
+  --bg-aurora-b: oklch(0.84 0.11 180);
+  --bg-aurora-c: oklch(0.88 0.1 160);
+}
+.dark .variant-base,
+.dark.variant-base {
+  --brand: oklch(0.72 0.14 195);
+  --brand-gradient: linear-gradient(135deg, oklch(0.72 0.14 200), oklch(0.76 0.14 165));
+  --brand-glow: oklch(0.72 0.14 195 / 0.5);
+  --bg-aurora-a: oklch(0.5 0.16 200);
+  --bg-aurora-b: oklch(0.48 0.15 180);
+  --bg-aurora-c: oklch(0.5 0.13 160);
+}
+
+/* Re-point the brand-derived aliases at the local --brand so focus outlines,
+ * the waveform color, and shadcn primary/ring follow the variant accent too.
+ * Co-declared with --brand on the same element, so var(--brand) resolves to the
+ * overridden (variant) value in both light and dark. */
+.variant-voicedesign, .variant-base {
+  --accent: var(--brand);
+  --waveform: var(--brand);
+  --cta: var(--brand);
+  --primary: var(--brand);
+  --ring: var(--brand);
+}
+
 /* shadcn token aliases: shadcn-generated components reference --primary/--card/etc.
  * Map them onto our brand tokens so the UI inherits our palette automatically. */
 :root, .dark {

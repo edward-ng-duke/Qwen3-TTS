@@ -3,6 +3,9 @@ import { getAuthToken, setAuthUser } from "@/lib/authStorage"
 
 export type AudioFormat = "wav" | "mp3" | "flac" | "pcm"
 
+/** 后端 MODEL_VARIANT，决定本容器加载哪个模型、暴露哪套 API。 */
+export type ModelVariant = "customvoice" | "voicedesign" | "base"
+
 export interface VoiceInfo {
   id: string
   display_name: string
@@ -35,10 +38,59 @@ export interface NativeTTSRequest {
   seed?: number | null
 }
 
+/** voicedesign 变体：用自然语言描述设计音色（instruct 必填）。 */
+export interface VoiceDesignRequest {
+  text: string
+  instruct: string
+  language?: string
+  response_format?: AudioFormat
+  sampling?: SamplingParams
+  seed?: number | null
+}
+
+/** base 变体：克隆端点的扁平采样字段（不接受 subtalker_*）。 */
+export interface CloneSampling {
+  seed?: number | null
+  temperature?: number | null
+  top_k?: number | null
+  top_p?: number | null
+  repetition_penalty?: number | null
+  max_new_tokens?: number | null
+}
+
+/** base 变体：一步式克隆 /v1/clone（multipart）。 */
+export interface CloneParams extends CloneSampling {
+  text: string
+  refAudio: Blob
+  refAudioName?: string
+  refText?: string | null
+  xVectorOnly?: boolean
+  language?: string
+  responseFormat?: AudioFormat
+}
+
+/** base 变体：保存可复用音色 /v1/voice/save（multipart → .pt）。 */
+export interface SaveVoiceParams {
+  refAudio: Blob
+  refAudioName?: string
+  refText?: string | null
+  xVectorOnly?: boolean
+}
+
+/** base 变体：用保存的 .pt 合成 /v1/voice/generate（multipart）。 */
+export interface GenerateFromVoiceParams extends CloneSampling {
+  text: string
+  voicePrompt: Blob
+  voicePromptName?: string
+  language?: string
+  responseFormat?: AudioFormat
+}
+
 export interface HealthResponse {
   status: "ok" | "loading" | "error"
   model_ready: boolean
   model_path: string
+  variant: ModelVariant
 }
 
 export interface AuthUser {
@@ -75,14 +127,42 @@ function withAuth(init?: RequestInit): RequestInit {
   return { credentials: "include", ...init, headers }
 }
 
+async function throwApiError(r: Response): Promise<never> {
+  let detail = await r.text().catch(() => "")
+  try { const j = JSON.parse(detail); detail = j.detail ?? detail } catch { /* ignore non-JSON error body */ }
+  throw new ApiError(r.status, r.statusText, detail)
+}
+
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(BASE + path, withAuth(init))
-  if (!r.ok) {
-    let detail = await r.text().catch(() => "")
-    try { const j = JSON.parse(detail); detail = j.detail ?? detail } catch { /* ignore non-JSON error body */ }
-    throw new ApiError(r.status, r.statusText, detail)
-  }
+  if (!r.ok) await throwApiError(r)
   return r.json() as Promise<T>
+}
+
+/** 所有「返回二进制音频」的端点共用：发请求、解错、读 blob + Content-Type。 */
+async function fetchAudio(
+  path: string,
+  init: RequestInit,
+): Promise<{ blob: Blob; contentType: string }> {
+  const r = await fetch(BASE + path, withAuth(init))
+  if (!r.ok) await throwApiError(r)
+  const blob = await r.blob()
+  return { blob, contentType: r.headers.get("Content-Type") ?? "audio/wav" }
+}
+
+/** 仅追加已定义的字段，避免给后端发 "null"/"undefined" 字符串。 */
+function appendDefined(fd: FormData, key: string, value: unknown): void {
+  if (value === undefined || value === null || value === "") return
+  fd.append(key, String(value))
+}
+
+function appendCloneSampling(fd: FormData, s: CloneSampling): void {
+  appendDefined(fd, "seed", s.seed)
+  appendDefined(fd, "temperature", s.temperature)
+  appendDefined(fd, "top_k", s.top_k)
+  appendDefined(fd, "top_p", s.top_p)
+  appendDefined(fd, "repetition_penalty", s.repetition_penalty)
+  appendDefined(fd, "max_new_tokens", s.max_new_tokens)
 }
 
 export const api = {
@@ -105,21 +185,62 @@ export const api = {
     }),
   logout: () => fetchJson<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
 
-  async tts(req: NativeTTSRequest, signal?: AbortSignal): Promise<{ blob: Blob; contentType: string }> {
-    const r = await fetch(BASE + "/v1/tts", {
-      ...withAuth({
+  // —— customvoice ——
+  tts(req: NativeTTSRequest, signal?: AbortSignal) {
+    return fetchAudio("/v1/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ response_format: "wav", ...req }),
       signal,
-      }),
     })
-    if (!r.ok) {
-      let detail = await r.text().catch(() => "")
-      try { const j = JSON.parse(detail); detail = j.detail ?? detail } catch { /* ignore non-JSON error body */ }
-      throw new ApiError(r.status, r.statusText, detail)
-    }
+  },
+
+  // —— voicedesign ——
+  ttsDesign(req: VoiceDesignRequest, signal?: AbortSignal) {
+    return fetchAudio("/v1/tts/design", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ response_format: "wav", ...req }),
+      signal,
+    })
+  },
+
+  // —— base：一步式克隆 ——
+  clone(p: CloneParams, signal?: AbortSignal) {
+    const fd = new FormData()
+    fd.append("text", p.text)
+    fd.append("ref_audio", p.refAudio, p.refAudioName ?? "ref_audio.wav")
+    appendDefined(fd, "ref_text", p.refText)
+    fd.append("x_vector_only", String(!!p.xVectorOnly))
+    appendDefined(fd, "language", p.language ?? "Auto")
+    appendDefined(fd, "response_format", p.responseFormat ?? "wav")
+    appendCloneSampling(fd, p)
+    return fetchAudio("/v1/clone", { method: "POST", body: fd, signal })
+  },
+
+  // —— base：保存音色为 .pt ——
+  async saveVoice(p: SaveVoiceParams): Promise<{ blob: Blob; filename: string }> {
+    const fd = new FormData()
+    fd.append("ref_audio", p.refAudio, p.refAudioName ?? "ref_audio.wav")
+    appendDefined(fd, "ref_text", p.refText)
+    fd.append("x_vector_only", String(!!p.xVectorOnly))
+    const r = await fetch(BASE + "/v1/voice/save", withAuth({ method: "POST", body: fd }))
+    if (!r.ok) await throwApiError(r)
     const blob = await r.blob()
-    return { blob, contentType: r.headers.get("Content-Type") ?? "audio/wav" }
+    const cd = r.headers.get("Content-Disposition") ?? ""
+    const m = /filename\*?=(?:UTF-8''|")?([^";]+)"?/i.exec(cd)
+    const filename = m ? decodeURIComponent(m[1]) : "voice.pt"
+    return { blob, filename }
+  },
+
+  // —— base：用保存的 .pt 合成 ——
+  generateFromVoice(p: GenerateFromVoiceParams, signal?: AbortSignal) {
+    const fd = new FormData()
+    fd.append("text", p.text)
+    fd.append("voice_prompt", p.voicePrompt, p.voicePromptName ?? "voice.pt")
+    appendDefined(fd, "language", p.language ?? "Auto")
+    appendDefined(fd, "response_format", p.responseFormat ?? "wav")
+    appendCloneSampling(fd, p)
+    return fetchAudio("/v1/voice/generate", { method: "POST", body: fd, signal })
   },
 }

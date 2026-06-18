@@ -6,6 +6,8 @@ import { GlassCard } from "@/components/GlassCard"
 import { useAuth } from "@/lib/authContext"
 import { T } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
+import { variantTheme } from "@/lib/variantTheme"
+import type { ModelVariant } from "@/lib/api"
 
 type DocumentWithViewTransition = Document & {
   startViewTransition?: (cb: () => void) => { finished: Promise<void> }
@@ -19,7 +21,7 @@ function statusLabel(status: string | undefined, ready: boolean | undefined) {
   return T.status.notReady
 }
 
-export function Topbar() {
+export function Topbar({ variant = "customvoice" }: { variant?: ModelVariant }) {
   const theme = useUiStore((s) => s.theme)
   const setTheme = useUiStore((s) => s.setTheme)
   const panelOpen = useUiStore((s) => s.panelOpen)
@@ -27,6 +29,7 @@ export function Topbar() {
   const { data: health } = useHealth()
   const auth = useAuth()
   const ready = !!health?.model_ready
+  const vt = variantTheme(variant)
 
   const onToggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark"
@@ -54,7 +57,7 @@ export function Topbar() {
           className="inline-flex w-8 h-8 sm:w-7 sm:h-7 shrink-0 items-center justify-center rounded-full text-white text-sm font-semibold"
           style={{ background: "var(--brand-gradient)", boxShadow: "0 4px 12px var(--brand-glow)" }}
         >
-          微
+          {vt.logo}
         </span>
         <div className="min-w-0 flex items-baseline gap-1.5 max-[360px]:gap-1 select-none">
           <span className="shrink-0 font-semibold tracking-tight text-[15px] text-[var(--text-primary)]">
@@ -62,7 +65,7 @@ export function Topbar() {
           </span>
           <span className="hidden min-[430px]:inline text-[var(--text-tertiary)]" aria-hidden>·</span>
           <span className="hidden min-[430px]:inline text-[13px] text-[var(--text-secondary)] truncate">
-            {T.brand.subtitle}
+            {vt.subtitle}
           </span>
         </div>
 

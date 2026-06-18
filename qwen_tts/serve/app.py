@@ -126,19 +126,23 @@ def create_app(
         if assets_dir.is_dir():
             app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="web-assets")
 
-    if cfg.variant == "customvoice":
-        if web_dist.is_dir() and (web_dist / "index.html").exists():
-            app.mount(
-                "/",
-                StaticFiles(directory=str(web_dist), html=True),
-                name="web",
-            )
-            log.info("Mounted React web at / (dist=%s)", web_dist)
-        else:
-            log.warning(
-                "web/dist not found at %s — Gradio at /legacy is the only UI", web_dist
-            )
+    # The React app (web/dist) is variant-aware: it reads /v1/health.variant and
+    # renders the matching studio. So we mount the SAME dist at / for ALL variants;
+    # the Gradio demo stays at /legacy as a fallback. Only when dist is missing
+    # (e.g. a backend-only dev shell) do we fall back to redirecting / -> /legacy/.
+    if web_dist.is_dir() and (web_dist / "index.html").exists():
+        app.mount(
+            "/",
+            StaticFiles(directory=str(web_dist), html=True),
+            name="web",
+        )
+        log.info("Mounted React web at / (variant=%s, dist=%s)", cfg.variant, web_dist)
     else:
+        log.warning(
+            "web/dist not found at %s — falling back to Gradio /legacy redirect (variant=%s)",
+            web_dist, cfg.variant,
+        )
+
         @app.get("/")
         def _root_redirect() -> RedirectResponse:
             return RedirectResponse(url="/legacy/", status_code=307)

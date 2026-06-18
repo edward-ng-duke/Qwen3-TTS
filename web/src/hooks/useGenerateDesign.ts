@@ -1,46 +1,40 @@
 import { useMutation } from "@tanstack/react-query"
-import { api, type NativeTTSRequest } from "@/lib/api"
+import { api, type VoiceDesignRequest } from "@/lib/api"
 import { historyDb, notifyHistoryChanged, type HistoryItem } from "@/lib/db"
 import { getAudioDuration } from "@/lib/audio"
 import { useUiStore } from "@/stores/useUiStore"
 import { toast } from "sonner"
 
-interface GenerateInput {
+interface DesignInput {
   text: string
-  speakerId: string
+  instruct: string
   language: string
-  emotionName: string
-  emotionInstruct: string | null   // 已根据 emotionName 解析好的 instruct
-  customInstruct?: string
   seed: number | null
 }
 
-export function useGenerate() {
+export function useGenerateDesign() {
   const advanced = useUiStore((s) => s.advanced)
 
   return useMutation({
-    mutationFn: async (input: GenerateInput) => {
+    mutationFn: async (input: DesignInput) => {
       const start = performance.now()
-      const req: NativeTTSRequest = {
+      const req: VoiceDesignRequest = {
         text: input.text,
-        speaker: input.speakerId,
+        instruct: input.instruct,
         language: input.language,
-        instruct: input.emotionInstruct || null,
         seed: input.seed,
         sampling: advanced,
         response_format: "wav",
       }
-      const { blob, contentType } = await api.tts(req)
+      const { blob, contentType } = await api.ttsDesign(req)
       const generationMs = Math.round(performance.now() - start)
       const audioDurationSec = await getAudioDuration(blob)
       const item: Omit<HistoryItem, "id"> = {
         createdAt: Date.now(),
-        kind: "customvoice",
+        kind: "design",
         text: input.text,
         language: input.language,
-        speakerId: input.speakerId,
-        emotion: input.emotionName,
-        customInstruct: input.customInstruct,
+        instruct: input.instruct,
         sampling: advanced,
         seed: input.seed,
         audioBlob: blob,

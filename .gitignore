@@ -30,6 +30,9 @@ followups.md
 
 # Local debug / decode artifacts (e.g. decoded_single_12hz.wav)
 *.wav
+# ...but the bundled clone-reference clips ARE required UI assets (served to the
+# Base/Clone studio's "示例参考音色"), so keep them version-controlled.
+!web/public/samples/clone-ref/*.wav
 
 # Local tooling / agent state (not project source).
 .claude/

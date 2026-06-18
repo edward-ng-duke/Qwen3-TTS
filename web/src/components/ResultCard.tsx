@@ -4,6 +4,7 @@ import { Play, Pause, Download, RotateCcw, Copy, Trash2 } from "lucide-react"
 import { motion } from "motion/react"
 import type { HistoryItem } from "@/lib/db"
 import { useComposerStore } from "@/stores/useComposerStore"
+import { useStudioApi } from "@/lib/studioContext"
 import { downloadBlob } from "@/lib/audio"
 import { formatLanguage, formatRelativeTime, formatSeconds, truncate } from "@/lib/format"
 import { toast } from "sonner"
@@ -51,6 +52,7 @@ function ActionButton({
 }
 
 export function ResultCard({ item, onDelete }: Props) {
+  const studio = useStudioApi()
   const loadFromHistory = useComposerStore((s) => s.loadFromHistory)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -60,6 +62,12 @@ export function ResultCard({ item, onDelete }: Props) {
   const trackRef = useRef<HTMLDivElement | null>(null)
   const [expanded, setExpanded] = useState(false)
   const canExpand = item.text.length > 120
+
+  const kind = item.kind ?? "customvoice"
+  const leadLabel =
+    kind === "design" ? "声音设计"
+      : kind === "clone" ? (item.label || "声音克隆")
+      : voiceNameById(item.speakerId ?? "")
 
   useEffect(() => {
     const u = URL.createObjectURL(item.audioBlob)
@@ -99,34 +107,71 @@ export function ResultCard({ item, onDelete }: Props) {
     downloadBlob(item.audioBlob, `weiqu-${item.id ?? Date.now()}.${ext}`)
 
   const onReuse = () => {
-    loadFromHistory({
-      text: item.text,
-      language: item.language,
-      speakerId: item.speakerId,
-      emotion: item.emotion,
-      customInstruct: item.customInstruct,
-      seed: item.seed,
-    })
+    // Studio-provided handler routes "reuse" to the active studio's store;
+    // customvoice has no provider and falls back to the composer store.
+    if (studio) {
+      studio.reuse(item)
+    } else {
+      loadFromHistory({
+        text: item.text,
+        language: item.language,
+        speakerId: item.speakerId ?? "vivian",
+        emotion: item.emotion ?? "Neutral",
+        customInstruct: item.customInstruct,
+        seed: item.seed,
+      })
+    }
     toast.success("已载入到编辑器")
   }
 
   const onCopyCurl = async () => {
-    const instruct = emotionInstructFor(item.emotion, item.customInstruct ?? "") || null
-    const body = JSON.stringify({
-      text: item.text,
-      speaker: item.speakerId,
-      language: item.language,
-      instruct,
-      response_format: ext,
-      sampling: item.sampling ?? undefined,
-      seed: item.seed ?? null,
-    }, null, 2)
-    const cmd = `curl -X POST ${window.location.origin}/v1/tts \\
+    const origin = window.location.origin
+    let cmd: string
+    if (item.kind === "design") {
+      const body = JSON.stringify({
+        text: item.text,
+        instruct: item.instruct ?? "",
+        language: item.language,
+        response_format: ext,
+        sampling: item.sampling ?? undefined,
+        seed: item.seed ?? null,
+      }, null, 2)
+      cmd = `curl -X POST ${origin}/v1/tts/design \\
   -H 'Content-Type: application/json' \\
   --data-binary @- \\
   --output out.${ext} <<'JSON'
 ${body}
 JSON`
+    } else if (item.kind === "clone") {
+      const lines = [
+        `curl -X POST ${origin}/v1/clone \\`,
+        `  -F text=${shellQuote(item.text)} \\`,
+        `  -F ref_audio=@ref.wav \\`,
+      ]
+      if (!item.xVectorOnly && item.refText) lines.push(`  -F ref_text=${shellQuote(item.refText)} \\`)
+      lines.push(`  -F x_vector_only=${item.xVectorOnly ? "true" : "false"} \\`)
+      lines.push(`  -F language=${shellQuote(item.language)} \\`)
+      if (item.seed != null) lines.push(`  -F seed=${item.seed} \\`)
+      lines.push(`  --output out.${ext}`)
+      cmd = lines.join("\n")
+    } else {
+      const instruct = emotionInstructFor(item.emotion ?? "Neutral", item.customInstruct ?? "") || null
+      const body = JSON.stringify({
+        text: item.text,
+        speaker: item.speakerId,
+        language: item.language,
+        instruct,
+        response_format: ext,
+        sampling: item.sampling ?? undefined,
+        seed: item.seed ?? null,
+      }, null, 2)
+      cmd = `curl -X POST ${origin}/v1/tts \\
+  -H 'Content-Type: application/json' \\
+  --data-binary @- \\
+  --output out.${ext} <<'JSON'
+${body}
+JSON`
+    }
     try {
       await writeClipboard(cmd)
       toast.success(T.results.copied)
@@ -165,21 +210,38 @@ JSON`
       className="max-w-[880px] mx-auto rounded-[var(--radius-card)] p-4 sm:p-5 space-y-4"
     >
       <header className="min-w-0 flex items-center gap-2 text-[12px] text-[var(--text-secondary)] flex-wrap">
-        <span className="text-[var(--text-primary)] font-medium">{voiceNameById(item.speakerId)}</span>
+        <span className="text-[var(--text-primary)] font-medium">{leadLabel}</span>
         <span className="text-[var(--text-tertiary)]">·</span>
         <span>{formatLanguage(item.language)}</span>
-        <span className="text-[var(--text-tertiary)]">·</span>
-        {item.emotion === "Custom" && item.customInstruct?.trim() ? (
-          <span
-            className="min-w-0 max-w-full sm:max-w-[420px] truncate"
-            title={item.customInstruct.trim()}
-          >
-            {EMOTION_EMOJI.Custom} {truncate(item.customInstruct.trim(), 40)}
-          </span>
+        {kind === "design" && item.instruct?.trim() ? (
+          <>
+            <span className="text-[var(--text-tertiary)]">·</span>
+            <span className="min-w-0 max-w-full sm:max-w-[420px] truncate" title={item.instruct.trim()}>
+              🎨 {truncate(item.instruct.trim(), 40)}
+            </span>
+          </>
+        ) : kind === "clone" ? (
+          <>
+            <span className="text-[var(--text-tertiary)]">·</span>
+            <span className="min-w-0 max-w-full sm:max-w-[420px] truncate" title={item.refText?.trim() || undefined}>
+              {item.xVectorOnly ? "🎙 向量" : "🎙 ICL"}
+              {item.refText?.trim() ? ` · ${truncate(item.refText.trim(), 32)}` : ""}
+            </span>
+          </>
+        ) : item.emotion === "Custom" && item.customInstruct?.trim() ? (
+          <>
+            <span className="text-[var(--text-tertiary)]">·</span>
+            <span className="min-w-0 max-w-full sm:max-w-[420px] truncate" title={item.customInstruct.trim()}>
+              {EMOTION_EMOJI.Custom} {truncate(item.customInstruct.trim(), 40)}
+            </span>
+          </>
         ) : (
-          <span>
-            {EMOTION_EMOJI[item.emotion] ?? ""} {EMOTION_ZH[item.emotion] ?? item.emotion}
-          </span>
+          <>
+            <span className="text-[var(--text-tertiary)]">·</span>
+            <span>
+              {EMOTION_EMOJI[item.emotion ?? "Neutral"] ?? ""} {EMOTION_ZH[item.emotion ?? "Neutral"] ?? item.emotion}
+            </span>
+          </>
         )}
         <span className="text-[var(--text-tertiary)]">·</span>
         <span className="tabular-nums">{(item.generationMs / 1000).toFixed(2)} 秒</span>
@@ -279,7 +341,7 @@ JSON`
                   left: `${progress * 100}%`,
                   width: seekHover ? 14 : 12,
                   height: seekHover ? 14 : 12,
-                  border: "2px solid oklch(0.65 0.22 280)",
+                  border: "2px solid var(--brand)",
                   boxShadow: "0 2px 10px var(--brand-glow)",
                 }}
                 transition={spring}
@@ -324,6 +386,11 @@ JSON`
       </div>
     </GlassCard>
   )
+}
+
+/** Single-quote a value for a shell -F field, escaping embedded single quotes. */
+function shellQuote(s: string): string {
+  return `'${s.replace(/'/g, `'\\''`)}'`
 }
 
 async function writeClipboard(text: string): Promise<void> {
