@@ -6,7 +6,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 _SLUG_ALPHABET = string.ascii_lowercase + string.digits
-VALID_DIMENSIONS = ("voice", "emotion", "language", "temperature", "speed")
+VALID_DIMENSIONS = ("voice", "emotion", "language", "temperature", "speed", "dialect")
 _VARIANT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 
 
@@ -34,6 +34,10 @@ class ShareVariant(BaseModel):
     temperature: Optional[float] = None
     speed: Optional[float] = None
     duration_ms: Optional[int] = None
+    # Per-variant text override — lets a comparison vary the text too (e.g. the
+    # multilingual gallery scenario, where each column is a different translation).
+    # When unset, the column uses the work's shared `text`.
+    text: Optional[str] = None
 
 
 class PublishMetadata(BaseModel):

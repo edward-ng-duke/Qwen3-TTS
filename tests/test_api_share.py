@@ -130,6 +130,28 @@ def test_publish_then_fetch_and_stream_audio(tmp_path):
     assert audio.headers["content-type"] == "audio/wav"
 
 
+def test_publish_per_variant_text_roundtrips(tmp_path):
+    """Multilingual scenarios give each column its own text (translation)."""
+    client, _ = _make_client(tmp_path)
+    variants = [
+        {"id": "zh", "label": "中文", "voice": "vivian", "language": "Chinese", "text": "你好世界"},
+        {"id": "en", "label": "English", "voice": "ryan", "language": "English", "text": "Hello world"},
+    ]
+    r = _publish(client, dimension="language", variants=variants)
+    assert r.status_code == 200
+    body = client.get(f"/v1/share/{r.json()['slug']}").json()
+    assert {v["id"]: v["text"] for v in body["variants"]} == {"zh": "你好世界", "en": "Hello world"}
+
+
+def test_dialect_dimension_accepted(tmp_path):
+    client, _ = _make_client(tmp_path)
+    variants = [
+        {"id": "yue", "label": "粤语", "voice": "vivian", "instruct": "用粤语朗读"},
+        {"id": "sc", "label": "四川话", "voice": "vivian", "instruct": "用四川话朗读"},
+    ]
+    assert _publish(client, dimension="dialect", variants=variants).status_code == 200
+
+
 def test_unknown_slug_404(tmp_path):
     client, _ = _make_client(tmp_path)
     assert client.get("/v1/share/nope1234").status_code == 404

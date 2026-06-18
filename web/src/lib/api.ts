@@ -127,6 +127,7 @@ export interface ShareVariantOut {
   temperature?: number | null
   speed?: number | null
   duration_ms?: number | null
+  text?: string | null
   audio_url: string
 }
 export interface ShareWork {
@@ -149,6 +150,7 @@ export interface ShareMetaVariant {
   temperature?: number
   speed?: number
   duration_ms?: number
+  text?: string
 }
 export interface ShareMetadata {
   text: string

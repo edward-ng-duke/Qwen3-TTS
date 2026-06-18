@@ -28,5 +28,34 @@
       { "id": "calm", "label": "平静", "voice": "vivian", "emotion": "平静", "instruct": "用平静舒缓的语气说" },
       { "id": "surprised", "label": "惊讶", "voice": "vivian", "emotion": "惊讶", "instruct": "用惊讶意外的语气说" }
     ]
+  },
+  {
+    "title": "10 语种同义句",
+    "text": "你好，很高兴认识你，欢迎体验我们的语音合成。",
+    "dimension": "language",
+    "variants": [
+      { "id": "zh", "label": "中文", "voice": "vivian", "language": "Chinese", "text": "你好，很高兴认识你，欢迎体验我们的语音合成。" },
+      { "id": "en", "label": "English", "voice": "ryan", "language": "English", "text": "Hi, nice to meet you. Welcome to try our speech synthesis." },
+      { "id": "ja", "label": "日本語", "voice": "ono_anna", "language": "Japanese", "text": "こんにちは、お会いできてうれしいです。私たちの音声合成をぜひお試しください。" },
+      { "id": "ko", "label": "한국어", "voice": "sohee", "language": "Korean", "text": "안녕하세요, 만나서 반갑습니다. 저희 음성 합성을 체험해 보세요." },
+      { "id": "de", "label": "Deutsch", "voice": "eric", "language": "German", "text": "Hallo, schön dich kennenzulernen. Probier gern unsere Sprachsynthese aus." },
+      { "id": "fr", "label": "Français", "voice": "ryan", "language": "French", "text": "Bonjour, ravi de vous rencontrer. Essayez notre synthèse vocale." },
+      { "id": "ru", "label": "Русский", "voice": "eric", "language": "Russian", "text": "Здравствуйте, рад знакомству. Попробуйте наш синтез речи." },
+      { "id": "pt", "label": "Português", "voice": "ryan", "language": "Portuguese", "text": "Olá, prazer em conhecê-lo. Experimente a nossa síntese de voz." },
+      { "id": "es", "label": "Español", "voice": "aiden", "language": "Spanish", "text": "Hola, encantado de conocerte. Prueba nuestra síntesis de voz." },
+      { "id": "it", "label": "Italiano", "voice": "dylan", "language": "Italian", "text": "Ciao, piacere di conoscerti. Prova la nostra sintesi vocale." }
+    ]
+  },
+  {
+    "title": "方言专场",
+    "text": "今天天气真不错，我们一起出去走走吧。",
+    "dimension": "dialect",
+    "variants": [
+      { "id": "mandarin", "label": "普通话", "voice": "uncle_fu", "instruct": "用标准普通话朗读" },
+      { "id": "cantonese", "label": "粤语", "voice": "uncle_fu", "instruct": "用粤语朗读" },
+      { "id": "sichuan", "label": "四川话", "voice": "uncle_fu", "instruct": "用四川话朗读" },
+      { "id": "northeast", "label": "东北话", "voice": "uncle_fu", "instruct": "用东北话朗读" },
+      { "id": "shanghai", "label": "上海话", "voice": "uncle_fu", "instruct": "用上海话朗读" }
+    ]
   }
 ]
