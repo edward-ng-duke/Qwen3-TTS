@@ -245,6 +245,17 @@ export const api = {
     })
   },
 
+  // OpenAI-compatible endpoint — used by the compare "by speed" axis (native /v1/tts
+  // has no speed param; this applies librosa time-stretch server-side).
+  audioSpeech(input: string, voice: string, speed: number, signal?: AbortSignal) {
+    return fetchAudio("/v1/audio/speech", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input, voice, speed, response_format: "wav" }),
+      signal,
+    })
+  },
+
   // —— voicedesign ——
   ttsDesign(req: VoiceDesignRequest, signal?: AbortSignal) {
     return fetchAudio("/v1/tts/design", {
