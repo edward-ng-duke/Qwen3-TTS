@@ -47,5 +47,10 @@ followups.md
 # Agent-generated UI/UX review reports (multi-MB HTML; not project source).
 /report/
 
+# Feature-review loop artifacts (review deliverables, not project source).
+/feature-loop-report.html
+/feature-loop-checklist.md
+/feature-loop-assets/
+
 # Deploy bundle: compressed image tarball + copied .env/jwt for cross-machine deploy.
 /deploy-bundle/

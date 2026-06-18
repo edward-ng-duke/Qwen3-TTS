@@ -1,7 +1,8 @@
+import { useRef } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { api, type CloneSampling } from "@/lib/api"
 import { historyDb, notifyHistoryChanged, type HistoryItem } from "@/lib/db"
-import { getAudioDuration } from "@/lib/audio"
+import { getAudioDuration, isAbortError } from "@/lib/audio"
 import { useUiStore } from "@/stores/useUiStore"
 import { toast } from "sonner"
 import { T } from "@/lib/i18n"
@@ -25,9 +26,12 @@ interface CloneInput {
 
 export function useGenerateClone() {
   const advanced = useUiStore((s) => s.advanced)
+  const abortRef = useRef<AbortController | null>(null)
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async (input: CloneInput) => {
+      const controller = new AbortController()
+      abortRef.current = controller
       // 克隆端点采样字段是扁平的，且不接受 subtalker_*。
       const sampling: CloneSampling = {
         seed: input.seed,
@@ -48,7 +52,7 @@ export function useGenerateClone() {
           voicePromptName: input.voicePromptName,
           language: input.language,
           ...sampling,
-        })
+        }, controller.signal)
       } else {
         if (!input.refAudio) throw new Error(T.clone.needRefAudio)
         if (!input.xVectorOnly && !input.refText?.trim()) throw new Error(T.clone.needRefText)
@@ -60,7 +64,7 @@ export function useGenerateClone() {
           xVectorOnly: input.xVectorOnly,
           language: input.language,
           ...sampling,
-        })
+        }, controller.signal)
       }
       const generationMs = Math.round(performance.now() - start)
       const audioDurationSec = await getAudioDuration(res.blob)
@@ -83,6 +87,9 @@ export function useGenerateClone() {
       notifyHistoryChanged()
       return { ...item, id }
     },
-    onError: (e: Error) => toast.error(`克隆失败：${e.message}`),
+    onError: (e: Error) => { if (!isAbortError(e)) toast.error(`克隆失败：${e.message}`) },
+    onSettled: () => { abortRef.current = null },
   })
+
+  return Object.assign(mutation, { cancel: () => abortRef.current?.abort() })
 }

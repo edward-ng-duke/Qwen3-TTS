@@ -20,6 +20,8 @@ from .api_meta import build_router as build_meta_router
 from .auth.middleware import AuthMiddleware
 from .auth.routes import build_router as build_auth_router
 from .auth.state import AuthState
+from .share.routes import build_router as build_share_router
+from .share.state import ShareState
 from .config import ServeConfig
 from .previews import ensure_all_previews
 from .voices import SPEAKER_METADATA
@@ -55,6 +57,7 @@ def create_app(
     *,
     load_model_on_startup: bool = True,
     auth_state: Optional[AuthState] = None,
+    share_state: Optional[ShareState] = None,
 ) -> FastAPI:
     # Non-customvoice variants mount the official Qwen Gradio at /legacy, and
     # build_demo() needs a *loaded* Qwen3TTSModel to introspect supported
@@ -74,10 +77,12 @@ def create_app(
             log.exception("Eager model load failed: %s", e)
 
     auth_state = auth_state or AuthState.from_env()
+    share_state = share_state or ShareState.from_env()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         await auth_state.startup()
+        await share_state.startup()
         if load_model_on_startup and not model_mod.is_ready():
             log.info("Loading model (variant=%s) from %s ...", cfg.variant, cfg.model_path)
             try:
@@ -99,15 +104,20 @@ def create_app(
             yield
         finally:
             await auth_state.shutdown()
+            await share_state.shutdown()
 
     app = FastAPI(title=f"微趣 · 接口文档 ({cfg.variant})", version="0.1.0", lifespan=lifespan)
     app.state.auth_state = auth_state
+    app.state.share_state = share_state
     if auth_state.enabled:
         app.add_middleware(AuthMiddleware)
         app.include_router(build_auth_router())
     app.include_router(build_meta_router(cfg))
     for r in _build_variant_router(cfg.variant):
         app.include_router(r)
+    # Share / gallery routes are variant-independent (publish stores client audio;
+    # gallery reads metadata). They self-404 when sharing is disabled.
+    app.include_router(build_share_router())
 
     blocks = _build_legacy_blocks(cfg)
     app = gr.mount_gradio_app(app, blocks, path="/legacy")
@@ -131,6 +141,18 @@ def create_app(
     # the Gradio demo stays at /legacy as a fallback. Only when dist is missing
     # (e.g. a backend-only dev shell) do we fall back to redirecting / -> /legacy/.
     if web_dist.is_dir() and (web_dist / "index.html").exists():
+        # SPA client routes (/gallery, /gallery/<slug>, /share/<slug>) are not
+        # real files, so StaticFiles would 404 on deep-link / refresh. Serve the
+        # app shell for them BEFORE the catch-all "/" mount; the client router
+        # then renders the right page.
+        index_file = str(web_dist / "index.html")
+
+        @app.get("/gallery")
+        @app.get("/gallery/{slug}")
+        @app.get("/share/{slug}")
+        def _spa_shell(slug: str = "") -> FileResponse:
+            return FileResponse(index_file, media_type="text/html")
+
         app.mount(
             "/",
             StaticFiles(directory=str(web_dist), html=True),

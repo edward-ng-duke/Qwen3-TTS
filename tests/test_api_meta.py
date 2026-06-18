@@ -73,6 +73,30 @@ def test_list_languages_includes_auto(client):
     assert "Chinese" in langs
 
 
+def test_list_languages_dedupes_auto_case_insensitively(tmp_path, monkeypatch):
+    """The model reports a lowercase 'auto' (and possible case dups); the merged
+    list must keep a single 'Auto' and collapse case-variants — no 'auto' twin."""
+    class _Model:
+        def get_supported_languages(self):
+            return ["auto", "Chinese", "chinese", "English"]
+
+    class _Wrap:
+        model = _Model()
+
+    monkeypatch.setattr(model_mod, "_instance", _Wrap())
+    cfg = ServeConfig(preview_cache_dir=str(tmp_path), model_path="/x")
+    app = FastAPI()
+    app.include_router(build_router(cfg))
+    langs = TestClient(app).get("/v1/languages").json()["languages"]
+    monkeypatch.setattr(model_mod, "_instance", None)
+
+    assert langs[0] == "Auto"
+    assert "auto" not in langs  # the lowercase twin is gone
+    lowered = [l.lower() for l in langs]
+    assert lowered.count("auto") == 1
+    assert lowered.count("chinese") == 1  # 'Chinese'/'chinese' collapsed to one
+
+
 def test_get_preview_generates_and_returns_wav(client, tmp_path):
     r = client.get("/v1/voices/vivian/preview")
     assert r.status_code == 200

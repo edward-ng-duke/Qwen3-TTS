@@ -1,7 +1,8 @@
-import { Moon, Sun, ExternalLink, PanelRightOpen, PanelRightClose, LogOut, UserCircle } from "lucide-react"
+import { Moon, Sun, ExternalLink, PanelRightOpen, PanelRightClose, LogOut, UserCircle, Images } from "lucide-react"
 import { motion } from "motion/react"
 import { useUiStore } from "@/stores/useUiStore"
 import { useHealth } from "@/hooks/useVoices"
+import { Link } from "@/lib/router"
 import { GlassCard } from "@/components/GlassCard"
 import { useAuth } from "@/lib/authContext"
 import { T } from "@/lib/i18n"
@@ -103,6 +104,13 @@ export function Topbar({ variant = "customvoice" }: { variant?: ModelVariant }) 
             </span>
           </div>
         ) : null}
+
+        <Link
+          to="/gallery"
+          className="hidden sm:inline-flex items-center gap-1 text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-2 py-1 rounded-[var(--radius-chip)] hover:bg-[var(--glass-thin-bg)]"
+        >
+          <Images className="size-3" /> 画廊
+        </Link>
 
         <a
           href="/docs"
