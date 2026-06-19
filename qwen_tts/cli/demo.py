@@ -55,10 +55,6 @@ def _dtype_from_str(s: str) -> torch.dtype:
     raise ValueError(f"Unsupported torch dtype: {s}. Use bfloat16/float16/float32.")
 
 
-def _maybe(v):
-    return v if v is not None else gr.update()
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="qwen-tts-demo",
