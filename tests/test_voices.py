@@ -1,4 +1,4 @@
-from qwen_tts.serve.voices import SPEAKER_METADATA, EMOTION_PRESETS, SpeakerInfo, EmotionPreset
+from qwen_tts.serve.voices import SPEAKER_METADATA, EMOTION_PRESETS, SpeakerInfo
 
 
 def test_speaker_keys_are_lowercase():

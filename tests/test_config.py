@@ -1,4 +1,4 @@
-from qwen_tts.serve.config import ServeConfig, resolve_model_path, VALID_VARIANTS
+from qwen_tts.serve.config import ServeConfig, resolve_model_path
 
 
 def test_defaults():

@@ -7,7 +7,6 @@ all covered without a live MongoDB.
 import json
 
 import numpy as np
-import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pymongo.errors import DuplicateKeyError
