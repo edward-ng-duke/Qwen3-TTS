@@ -1,4 +1,3 @@
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel

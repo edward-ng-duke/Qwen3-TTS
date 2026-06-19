@@ -1,14 +1,6 @@
-export function blobToObjectURL(blob: Blob): string {
-  return URL.createObjectURL(blob)
-}
-
 /** True when a fetch was cancelled via AbortController — a user action, not an error. */
 export function isAbortError(e: unknown): boolean {
   return e instanceof DOMException && e.name === "AbortError"
-}
-
-export function revokeObjectURL(url: string): void {
-  try { URL.revokeObjectURL(url) } catch { /* ignore */ }
 }
 
 export async function getAudioDuration(blob: Blob): Promise<number> {

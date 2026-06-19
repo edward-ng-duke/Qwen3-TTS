@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* Animation utilities (animate-in / fade-in / zoom-in / slide-in-*) used by the
+   Radix-based ui/ components (select, sheet, ...). Must be imported for those
+   data-state transitions to actually render. */
+@import "tw-animate-css";
 
 /* TW4: tell it where to scan for utilities (replaces tailwind.config.ts content). */
 @source "../../index.html";

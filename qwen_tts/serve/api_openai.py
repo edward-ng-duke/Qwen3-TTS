@@ -1,6 +1,5 @@
 """OpenAI-compatible TTS endpoint: POST /v1/audio/speech."""
 
-from typing import Optional
 
 import numpy as np
 from fastapi import APIRouter, HTTPException, Response

@@ -6,7 +6,7 @@ import pytest
 import soundfile as sf
 
 from qwen_tts.serve.audio import (
-    encode_wav, encode_flac, encode_pcm, encode_mp3, encode, CONTENT_TYPES,
+    encode_wav, encode_flac, encode_pcm, encode_mp3, encode,
 )
 
 

@@ -1,5 +1,4 @@
 from fastapi.testclient import TestClient
-import pytest
 
 from qwen_tts.serve import model as model_mod
 from qwen_tts.serve.app import create_app

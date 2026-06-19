@@ -72,7 +72,6 @@ def build_ui(cfg: ServeConfig) -> gr.Blocks:
     # Display→id mapping for the speaker radio
     _, speaker_pairs = build_speaker_picker(speakers)
     display_to_id = {d: sid for (d, sid) in speaker_pairs}
-    id_to_display = {sid: d for (d, sid) in speaker_pairs}
 
     theme = gr.themes.Soft(
         font=[gr.themes.GoogleFont("Inter"), "Arial", "sans-serif"],
