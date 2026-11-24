@@ -13,6 +13,16 @@ services:
     #   MODEL_VARIANT=base         → 3-second voice cloning
     environment:
       MODEL_VARIANT: ${MODEL_VARIANT:-customvoice}
+      # The application checks the host-side exposure separately from the
+      # container's required 0.0.0.0 listener and fails closed when a non-loopback
+      # bind has neither API token nor JWT user authentication.
+      API_EXPOSURE_HOST: ${BIND_HOST:-127.0.0.1}
+      API_AUTH_REQUIRED: ${API_AUTH_REQUIRED:-auto}
+      API_TOKEN: ${API_TOKEN:-}
+      API_RATE_LIMIT_PER_MINUTE: ${API_RATE_LIMIT_PER_MINUTE:-20}
+      API_MAX_BODY_BYTES: ${API_MAX_BODY_BYTES:-12582912}
+      API_MAX_UPLOAD_BYTES: ${API_MAX_UPLOAD_BYTES:-10485760}
+      ALLOW_UNAUTHENTICATED_PUBLIC_API: ${ALLOW_UNAUTHENTICATED_PUBLIC_API:-false}
       # User-system auth is auto-enabled when shared Mongo/JWT config is present.
       # Set AUTH_ENABLED=false to keep the historical open UI behavior.
       AUTH_ENABLED: ${AUTH_ENABLED:-auto}
@@ -32,7 +42,7 @@ services:
       bash -lc 'export JWT_SECRET_KEY="$(tr -d "\r\n" < /run/secrets/jwt_secret)";
       exec python -m qwen_tts.serve --host 0.0.0.0 --port 4967'
     ports:
-      - "4967:4967"
+      - "${BIND_HOST:-127.0.0.1}:4967:4967"
     volumes:
       - qwen-tts-previews:/var/qwen-tts/previews
       - qwen-tts-shared:/var/qwen-tts/shared

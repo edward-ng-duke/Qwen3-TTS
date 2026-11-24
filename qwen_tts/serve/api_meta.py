@@ -68,7 +68,6 @@ def build_router(cfg: ServeConfig) -> APIRouter:
         return HealthResponse(
             status="ok" if ready else "loading",
             model_ready=ready,
-            model_path=cfg.model_path,
             variant=cfg.variant,
         )
 

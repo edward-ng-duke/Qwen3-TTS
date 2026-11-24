@@ -76,6 +76,19 @@ def test_clone_missing_text(client):
     assert r.status_code == 400
 
 
+def test_clone_rejects_reference_audio_over_configured_limit(client):
+    from types import SimpleNamespace
+
+    client.app.state.api_security_config = SimpleNamespace(max_upload_bytes=128)
+    audio_bytes = _make_wav_bytes()
+    r = client.post(
+        "/v1/clone",
+        data={"text": "hi", "ref_text": "reference"},
+        files={"ref_audio": ("ref.wav", audio_bytes, "audio/wav")},
+    )
+    assert r.status_code == 413
+
+
 def test_clone_requires_ref_text_when_not_xvec(client):
     audio_bytes = _make_wav_bytes()
     r = client.post(

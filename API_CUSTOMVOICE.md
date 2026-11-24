@@ -13,7 +13,7 @@
 | Base URL | `http://<host>:<port>`（默认 `http://localhost:4967`，由 `PORT` 决定） |
 | 变体 | `customvoice`（`/v1/health` 返回 `"variant":"customvoice"`） |
 | 采样率 | 24000 Hz，单声道 |
-| 鉴权 | `/v1/*` 公开，无需 token |
+| 鉴权 | 非回环暴露要求 API Token 或登录 JWT；详见 `API_SECURITY_MIGRATION.md` |
 | 并发 | **全局生成锁，所有生成请求串行**（一次只跑一条） |
 | Swagger | `http://<host>:<port>/docs`（auth 开启时需登录） |
 
@@ -48,7 +48,7 @@ python -m qwen_tts.serve --variant customvoice --models-root "$(pwd)/models" \
 
 ### `GET /v1/health`
 ```json
-{"status":"ok","model_ready":true,"model_path":"/models/Qwen3-TTS-12Hz-1.7B-CustomVoice","variant":"customvoice"}
+{"status":"ok","model_ready":true,"variant":"customvoice"}
 ```
 `status` ∈ `ok | loading | error`。
 
@@ -146,7 +146,7 @@ curl -N -X POST http://localhost:4967/v1/tts/stream \
 
 ```python
 from openai import OpenAI
-client = OpenAI(base_url="http://localhost:4967/v1", api_key="not-needed")
+client = OpenAI(base_url="http://localhost:4967/v1", api_key="从环境变量读取 API_TOKEN")
 
 with client.audio.speech.with_streaming_response.create(
     model="qwen3-tts",
@@ -192,7 +192,7 @@ instruct 用模型本身的语言理解，**英中都接受**，可叠加修饰�
 - 单次最大输出 `max_new_tokens=2048`（约 30–60 秒音频，取决于内容）。
 - 文本超长会被截断；建议每次 ≤ 500 字。
 - **全局生成锁**：所有生成串行，一条慢/卡的请求阻塞整个生成接口；不要把 `temperature` 设得过低。
-- 浏览器端历史只在本机 IndexedDB（无后端持久化）；`/v1/*` 无鉴权 / 限流（私有部署，自行加 nginx 等前置）。
+- 浏览器端历史只在本机 IndexedDB；服务已提供最小 API 鉴权、单进程限流和请求大小上限，生产环境仍需由网关实施集中式限流、HTTPS 和分块请求体限制。
 
 ---
 

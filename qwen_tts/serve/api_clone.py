@@ -5,20 +5,34 @@ from typing import Optional
 
 import numpy as np
 import soundfile as sf
-from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
 
 from . import model as model_mod
+from .api_security import read_upload_limited, upload_limit_from_request
 from .audio import encode
 from .schemas import AudioFormat
 
+MAX_TEXT_CHARS = 4000
+MAX_REF_TEXT_CHARS = 4000
+MAX_NEW_TOKENS = 4096
 
-def _read_upload_audio(upload: UploadFile) -> tuple[np.ndarray, int]:
+
+def _check_form_limits(*, text: Optional[str] = None, ref_text: Optional[str] = None,
+                       max_new_tokens: Optional[int] = None) -> None:
+    if text is not None and len(text) > MAX_TEXT_CHARS:
+        raise HTTPException(status_code=422, detail=f"text must be ≤ {MAX_TEXT_CHARS} characters")
+    if ref_text is not None and len(ref_text) > MAX_REF_TEXT_CHARS:
+        raise HTTPException(status_code=422, detail=f"ref_text must be ≤ {MAX_REF_TEXT_CHARS} characters")
+    if max_new_tokens is not None and not 1 <= max_new_tokens <= MAX_NEW_TOKENS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"max_new_tokens must be between 1 and {MAX_NEW_TOKENS}",
+        )
+
+
+def _read_upload_audio(upload: UploadFile, *, limit: int) -> tuple[np.ndarray, int]:
     """Decode an uploaded audio file into (mono_float32, sample_rate)."""
-    try:
-        raw = upload.file.read()
-    finally:
-        try: upload.file.close()
-        except Exception: pass
+    raw = read_upload_limited(upload, limit=limit, label="ref_audio")
     if not raw:
         raise HTTPException(status_code=400, detail="ref_audio file is empty")
     try:
@@ -39,6 +53,7 @@ def build_router() -> APIRouter:
 
     @router.post("/clone")
     def clone(
+        request: Request,
         text: str = Form(...),
         ref_audio: UploadFile = File(...),
         language: str = Form("Auto"),
@@ -54,13 +69,18 @@ def build_router() -> APIRouter:
     ):
         if not text or not text.strip():
             raise HTTPException(status_code=400, detail="text is required")
+        _check_form_limits(text=text, ref_text=ref_text, max_new_tokens=max_new_tokens)
         use_xvec = _truthy(x_vector_only)
+        _check_form_limits(ref_text=ref_text)
         if not use_xvec and (not ref_text or not ref_text.strip()):
             raise HTTPException(
                 status_code=400,
                 detail="ref_text is required when x_vector_only is false",
             )
-        wav_arr, sr = _read_upload_audio(ref_audio)
+        wav_arr, sr = _read_upload_audio(
+            ref_audio,
+            limit=upload_limit_from_request(request),
+        )
         sampling = {
             "temperature": temperature, "top_k": top_k, "top_p": top_p,
             "repetition_penalty": repetition_penalty, "max_new_tokens": max_new_tokens,
@@ -83,6 +103,7 @@ def build_router() -> APIRouter:
 
     @router.post("/voice/save")
     def voice_save(
+        request: Request,
         ref_audio: UploadFile = File(...),
         ref_text: Optional[str] = Form(None),
         x_vector_only: Optional[str] = Form("false"),
@@ -95,7 +116,10 @@ def build_router() -> APIRouter:
                 status_code=400,
                 detail="ref_text is required when x_vector_only is false",
             )
-        wav_arr, sr = _read_upload_audio(ref_audio)
+        wav_arr, sr = _read_upload_audio(
+            ref_audio,
+            limit=upload_limit_from_request(request),
+        )
         try:
             items = model_mod.create_clone_prompt(
                 ref_audio=(wav_arr, sr),
@@ -115,6 +139,7 @@ def build_router() -> APIRouter:
 
     @router.post("/voice/generate")
     def voice_generate(
+        request: Request,
         text: str = Form(...),
         voice_prompt: UploadFile = File(...),
         language: str = Form("Auto"),
@@ -131,11 +156,12 @@ def build_router() -> APIRouter:
 
         if not text or not text.strip():
             raise HTTPException(status_code=400, detail="text is required")
-        try:
-            raw = voice_prompt.file.read()
-        finally:
-            try: voice_prompt.file.close()
-            except Exception: pass
+        _check_form_limits(text=text, max_new_tokens=max_new_tokens)
+        raw = read_upload_limited(
+            voice_prompt,
+            limit=upload_limit_from_request(request),
+            label="voice_prompt",
+        )
         if not raw:
             raise HTTPException(status_code=400, detail="voice_prompt is empty")
         try:

@@ -18,7 +18,7 @@ def test_from_env_no_overrides(monkeypatch):
         monkeypatch.delenv(k, raising=False)
     cfg = ServeConfig.from_env()
     assert cfg.port == 8000
-    assert cfg.host == "0.0.0.0"
+    assert cfg.host == "127.0.0.1"
 
 
 def test_from_env_overrides(monkeypatch):

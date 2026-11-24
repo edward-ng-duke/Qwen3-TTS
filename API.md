@@ -7,7 +7,7 @@ Base URL：`http://localhost:4967`（默认；通过 `PORT` 环境变量改）
 所有接口都是**无状态**的：每次请求自包含全部参数，不依赖 cookie / session。
 交互式 Swagger 文档：`http://localhost:4967/docs`（按变体生成）。
 
-> 用户系统开启后，`/docs`、`/openapi.json`、Web UI 和 `/legacy/` 需要登录；`/v1/*` 模型 API 保持公开兼容，不要求用户 token。
+> 本机回环地址可保持无 token 开发。非回环暴露必须配置静态 API Token 或启用现有 JWT 用户系统；详见 [`API_SECURITY_MIGRATION.md`](API_SECURITY_MIGRATION.md)。
 
 ---
 
@@ -30,7 +30,7 @@ MODEL_VARIANT=base docker compose up -d           # base
 python -m qwen_tts.serve --variant base --models-root ./models --attn-impl sdpa --port 4967
 ```
 
-客户端 / 前端可调 `GET /v1/health` 读 `variant` 字段，自动判断当前连的是哪个变体。
+客户端 / 前端可调 `GET /v1/health` 读 `status`、`model_ready` 和 `variant`，自动判断当前连的是哪个变体。健康检查不返回服务器本地模型路径。
 
 ---
 
@@ -49,7 +49,8 @@ python -m qwen_tts.serve --variant base --models-root ./models --attn-impl sdpa 
 - **全局生成锁**：服务端把所有生成请求**串行**（`_gen_lock`）。一条慢/卡的生成会阻塞整个生成接口（`/v1/health` 不受影响）。批量请求请串行发、给足超时；不要把 `temperature` 设得过低（如 0.3），个别句子可能退化到不收敛、长时间占锁。
 - **长度**：`max_new_tokens` 默认 2048（约 30–60s 音频），文本建议 ≤ 500 字。
 - **`seed`**：固定后「相同输入 + 相同 seed」可复现（实测字节一致）。
-- **鉴权**：`/v1/*` 公开，无需 token（见下「用户系统」）。
+- **鉴权**：生成、声音提示和试听生成接口在受保护部署中要求 Bearer Token、`X-API-Key` 或登录 JWT。返回最小字段的 `/v1/health`、`/v1/languages`、`/v1/voices` 及公开分享读取保持可读。
+- **安全上限**：文本最长 4000 字符、`instruct` 最长 2000 字符、`max_new_tokens` 最大 4096；默认生成限流每分钟 20 次，请求体 12 MiB，Base 上传 10 MiB。
 
 ---
 
@@ -64,6 +65,8 @@ python -m qwen_tts.serve --variant base --models-root ./models --attn-impl sdpa 
 ## 用户系统认证（可选）
 
 当 `AUTH_ENABLED=auto` 且检测到共享 Mongo/JWT 配置，或显式设置 `AUTH_ENABLED=true` 时，浏览器 UI 和文档入口会启用登录保护。认证复用同一个 MongoDB `conference_ws.users` 集合和同一个 `JWT_SECRET_KEY`。
+
+模型 API 还支持独立的 `API_TOKEN`，适用于服务器到服务器调用。只配置静态 Token 而未启用 JWT 用户系统时，Gradio 和根 UI 会被阻断，以免绕过 API Token 直接生成。
 
 | 方法 | 路径 | 说明 |
 |---|---|---|

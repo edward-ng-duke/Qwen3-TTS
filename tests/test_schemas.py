@@ -57,8 +57,9 @@ def test_voice_info_shape():
 
 
 def test_health_response():
-    h = HealthResponse(status="ok", model_ready=True, model_path="/models/x", variant="customvoice")
+    h = HealthResponse(status="ok", model_ready=True, variant="customvoice")
     assert h.model_ready is True
+    assert h.variant == "customvoice"
 
 
 def test_languages_response():

@@ -48,7 +48,8 @@ def test_health_ok(client):
     body = r.json()
     assert body["model_ready"] is True
     assert body["status"] == "ok"
-    assert body["model_path"] == "/x"
+    assert body["variant"] == "customvoice"
+    assert "model_path" not in body
 
 
 def test_list_voices(client):

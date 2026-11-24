@@ -14,7 +14,7 @@
 | Base URL | `http://<host>:<port>`（默认 `http://localhost:4967`，由 `PORT` 决定） |
 | 变体 | `voicedesign`（`/v1/health` 返回 `"variant":"voicedesign"`） |
 | 采样率 | 24000 Hz，单声道 |
-| 鉴权 | `/v1/*` 公开，无需 token |
+| 鉴权 | 非回环暴露要求 API Token 或登录 JWT；详见 `API_SECURITY_MIGRATION.md` |
 | 并发 | **全局生成锁，所有生成请求串行** |
 | Swagger | `http://<host>:<port>/docs`（auth 开启时需登录） |
 
@@ -45,7 +45,7 @@ python -m qwen_tts.serve --variant voicedesign --models-root "$(pwd)/models" \
 
 ### `GET /v1/health`
 ```json
-{"status":"ok","model_ready":true,"model_path":"/models/Qwen3-TTS-12Hz-1.7B-VoiceDesign","variant":"voicedesign"}
+{"status":"ok","model_ready":true,"variant":"voicedesign"}
 ```
 `status` ∈ `ok | loading | error`。
 

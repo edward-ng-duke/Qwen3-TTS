@@ -14,7 +14,7 @@
 | Base URL | `http://<host>:<port>`（本机实测 `http://127.0.0.1:4970`；远程由 `PORT` 决定） |
 | 变体 | `base`（`/v1/health` 返回 `"variant":"base"`） |
 | 采样率 | 24000 Hz，单声道 |
-| 鉴权 | `/v1/*` 公开，无需 token |
+| 鉴权 | 非回环暴露要求 API Token 或登录 JWT；详见 `API_SECURITY_MIGRATION.md` |
 | 并发 | **全局生成锁，所有生成请求串行**（一次只跑一条，见 §6） |
 | Swagger | `http://<host>:<port>/docs`（auth 开启时需登录） |
 
@@ -143,7 +143,7 @@ curl --noproxy '*' -s http://127.0.0.1:4970/v1/voice/generate \
 
 ### `GET /v1/health`
 ```json
-{"status":"ok","model_ready":true,"model_path":"/.../Qwen3-TTS-12Hz-1.7B-Base","variant":"base"}
+{"status":"ok","model_ready":true,"variant":"base"}
 ```
 `status` ∈ `ok | loading | error`。
 

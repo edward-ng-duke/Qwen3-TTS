@@ -17,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import model as model_mod
 from .api_meta import build_router as build_meta_router
+from .api_security import ApiSecurityConfig, ApiSecurityMiddleware
 from .auth.middleware import AuthMiddleware
 from .auth.routes import build_router as build_auth_router
 from .auth.state import AuthState
@@ -78,6 +79,10 @@ def create_app(
 
     auth_state = auth_state or AuthState.from_env()
     share_state = share_state or ShareState.from_env()
+    api_security_config = ApiSecurityConfig.from_env(
+        bind_host=cfg.host,
+        existing_auth_enabled=auth_state.enabled,
+    )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -109,9 +114,11 @@ def create_app(
     app = FastAPI(title=f"微趣 · 接口文档 ({cfg.variant})", version="0.1.0", lifespan=lifespan)
     app.state.auth_state = auth_state
     app.state.share_state = share_state
+    app.state.api_security_config = api_security_config
     if auth_state.enabled:
         app.add_middleware(AuthMiddleware)
         app.include_router(build_auth_router())
+    app.add_middleware(ApiSecurityMiddleware, config=api_security_config)
     app.include_router(build_meta_router(cfg))
     for r in _build_variant_router(cfg.variant):
         app.include_router(r)

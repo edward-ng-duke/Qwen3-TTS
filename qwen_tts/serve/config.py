@@ -37,7 +37,9 @@ class ServeConfig:
     device: str = "cuda:0"
     dtype: str = "bfloat16"           # bfloat16 | float16 | float32
     attn_impl: str = "flash_attention_2"  # or "sdpa", "eager"
-    host: str = "0.0.0.0"
+    # Local-by-default. Non-loopback exposure must pass ApiSecurityConfig's
+    # fail-closed validation and have either API tokens or browser JWT auth.
+    host: str = "127.0.0.1"
     port: int = 8000
     preview_cache_dir: str = "/var/qwen-tts/previews"
     concurrency: int = 4

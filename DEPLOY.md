@@ -12,7 +12,7 @@
 
 完整 API 参考见 [API.md](./API.md)。
 
-可选用户系统：设置共享 Mongo/JWT 配置后，React UI、`/legacy/`、`/docs`、`/openapi.json` 需要登录；`/v1/*` 模型 API 保持公开，方便现有调用脚本和 OpenAI 兼容客户端继续使用。
+安全默认：Compose 只发布到宿主机 `127.0.0.1`。改为 LAN/公网地址前，必须配置静态 `API_TOKEN` 或启用共享 Mongo/JWT 用户系统；迁移细节见 [API_SECURITY_MIGRATION.md](API_SECURITY_MIGRATION.md)。
 
 ---
 
@@ -111,7 +111,7 @@ docker compose build
 
 `docker compose up -d` 默认起 customvoice。要切到另外两个，用环境变量。
 
-### 3.0 用户系统认证（可选）
+### 3.0 API 鉴权与用户系统
 
 默认 `AUTH_ENABLED=auto`。只要检测到共享 Mongo/JWT 配置，或显式 `AUTH_ENABLED=true`，服务会启用用户系统：
 
@@ -119,6 +119,9 @@ docker compose build
 cp .env.example .env
 
 # 编辑 .env，至少确认这些值：
+BIND_HOST=127.0.0.1
+# 如果要改为 0.0.0.0 或 LAN IP，至少配置 API_TOKEN 或启用下方 JWT 用户系统
+API_TOKEN=
 AUTH_ENABLED=auto
 MONGO_ENABLED=true
 MONGO_URL=mongodb://10.0.0.93:27017
@@ -137,9 +140,22 @@ docker compose up -d
 
 行为边界：
 - 保护：`/`、`/legacy/*`、`/docs`、`/redoc`、`/openapi.json`。
-- 公开：`/v1/*` 模型 API、`/api/auth/*`、`/login`、前端静态资源。
+- API：生成、声音提示和试听生成接口需要 `API_TOKEN` 或登录 JWT；健康检查、语言列表、音色列表和公开分享读取可匿名读取。
+- 限制：生成接口默认每主体每分钟 20 次；请求体 12 MiB；Base 上传 10 MiB。
 - 不提供注册、用户管理后台、使用审计或云端历史。
 - 未配置 `JWT_SECRET_KEY` 但认证被启用时，认证接口 fail closed，并在日志中提示缺少密钥。
+
+仅使用 API Token 的调用示例：
+
+```bash
+curl -X POST http://localhost:4967/v1/tts \
+  -H "Authorization: Bearer ${API_TOKEN}" \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"今天天气真好","speaker":"vivian"}' \
+  --output customvoice_out.wav
+```
+
+静态 Token 不写入浏览器包。需要公开 Web UI 时必须启用 JWT 用户系统并使用 HTTPS。
 
 ### 3.1 CustomVoice（默认）—— 9 个预置音色
 
@@ -152,7 +168,7 @@ docker compose logs -f qwen-tts   # 等到 "Model loaded."
 
 ```bash
 curl -s http://localhost:4967/v1/health | jq
-# → {"status":"ok","model_ready":true,"model_path":"/models/Qwen3-TTS-12Hz-1.7B-CustomVoice","variant":"customvoice"}
+# → {"status":"ok","model_ready":true,"variant":"customvoice"}
 
 curl -s http://localhost:4967/v1/voices | jq '.voices[].id'
 # → "vivian", "ryan", "serena", ...

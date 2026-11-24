@@ -40,7 +40,8 @@ def test_health(client):
     assert r.status_code == 200
     body = r.json()
     assert body["model_ready"] is True
-    assert body["model_path"] == "/x"
+    assert body["variant"] == "customvoice"
+    assert "model_path" not in body
 
 
 def test_voices(client):
